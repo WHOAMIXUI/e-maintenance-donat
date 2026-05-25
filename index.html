@@ -141,7 +141,7 @@
 
                 <div class="p-6 bg-slate-50/50 border-b border-slate-200 grid grid-cols-1 lg:grid-cols-4 gap-4 no-print">
                     <button onclick="setFilterStatusQuick('Pending')" class="bg-white hover:border-amber-300 transition-all p-4 rounded-2xl border border-slate-200 text-left shadow-sm group">
-                        <div class="text-amber-600 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> ⌛ Open / Menunggu</div>
+                        <div class="text-amber-600 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> ⌛ Pending</div>
                         <div id="statPendingCount" class="text-2xl font-extrabold text-slate-800 mt-1">0</div>
                     </button>
                     <button onclick="setFilterStatusQuick('Sedang Diperbaiki')" class="bg-white hover:border-blue-300 transition-all p-4 rounded-2xl border border-slate-200 text-left shadow-sm group">
@@ -170,7 +170,7 @@
                         <label class="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">Filter Status Kerja</label>
                         <select id="filterStatus" onchange="renderTabel()" class="w-full px-3 py-2 border rounded-xl text-xs bg-white outline-none">
                             <option value="ALL">-- Semua Status --</option>
-                            <option value="Open / Menunggu">⌛ Open / Menunggu Teknisi</option>
+                            <option value="Pending">⌛ Pending Teknisi</option>
                             <option value="Sedang Diperbaiki">🛠️ Sedang Diperbaiki</option>
                             <option value="Selesai">✅ Selesai (Normal Kembali)</option>
                         </select>
@@ -541,7 +541,7 @@
         function updateDashboardCharts(dataTotalAwal) {
             let pending = 0, proses = 0, selesai = 0;
             dataTotalAwal.forEach(item => {
-                if(item.status === 'Open / Menunggu') pending++;
+                if(item.status === 'Pending') pending++;
                 else if(item.status === 'Sedang Diperbaiki') proses++;
                 else if(item.status === 'Selesai') selesai++;
             });
@@ -805,7 +805,7 @@
                 urgensi: document.getElementById('urgensi').value,
                 namaBarang: document.getElementById('namaBarang').value,
                 keterangan: document.getElementById('keterangan').value,
-                status: 'Open / Menunggu',
+                status: 'Pending',
                 listGambar: arrayLinkGambar,
                 videoData: videoBase64    
             };

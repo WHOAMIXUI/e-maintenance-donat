@@ -199,7 +199,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tabelData" class="divide-y divide-slate-100 text-xs text-slate-700 bg-white">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                     <div id="pesanKosong" class="hidden text-center py-16 text-slate-400 font-medium bg-slate-50 mt-3 rounded-xl border border-dashed border-slate-200">Tidak ada pengajuan perbaikan ditemukan.</div>
@@ -207,6 +207,18 @@
             </div>
 
             <div id="panelSetting" class="hidden space-y-6 no-print">
+                <div class="bg-white rounded-2xl shadow-sm border p-6">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-1.5"><span>💬</span> Pengaturan Integrasi WhatsApp</h3>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 max-w-xl">
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Nomor WhatsApp Tujuan (Teknisi / Koordinator)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="inputNoWhatsApp" placeholder="Contoh: 628123456789" class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-white focus:ring-2 focus:ring-emerald-500">
+                            <button onclick="simpanNomorWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-xl font-bold transition shadow-sm">Simpan</button>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1.5">*Gunakan kode negara di depan nomor (62), jangan pakai tanda + atau spasi.</p>
+                    </div>
+                </div>
+
                 <div class="bg-white rounded-2xl shadow-sm border p-6">
                     <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-1.5"><span>🖼️</span> Pengaturan Branding Logo</h3>
                     <div class="flex flex-col sm:flex-row items-center gap-5 bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -326,6 +338,7 @@
         let daftarPermintaan = [];
         let daftarTrash = [];
         let appLogo = '';
+        let targetWhatsAppNumber = '628123456789'; // Nomor fallback default
         let currentUserObj = null;
         let pieChartInstance = null;
 
@@ -344,6 +357,7 @@
                     if (db.divisi) masterDivisi = Object.values(db.divisi).filter(Boolean);
                     if (db.kategori) masterKategori = Object.values(db.kategori).filter(Boolean);
                     appLogo = db.logo || '';
+                    if (db.whatsapp_target) targetWhatsAppNumber = db.whatsapp_target;
                     daftarPermintaan = db.requests ? Object.keys(db.requests).map(key => ({ firebaseKey: key, ...db.requests[key] })) : [];
                     daftarTrash = db.trash ? Object.keys(db.trash).map(key => ({ firebaseKey: key, ...db.trash[key] })) : [];
                     if (db.users) masterUsers = Object.keys(db.users).map(key => ({ firebaseKey: key, ...db.users[key] }));
@@ -377,6 +391,9 @@
             setDefaultTanggal();
             buildSelectOptions();
             checkSavedSession();
+            if (document.getElementById('inputNoWhatsApp')) {
+                document.getElementById('inputNoWhatsApp').value = targetWhatsAppNumber;
+            }
         });
 
         function checkSavedSession() {
@@ -546,7 +563,53 @@
             });
         }
 
-        // FUNGSI RENDER TABEL YANG DIUBAH MENJADI BERGAYA POS (CLEAN BORDER & STRIPED BACKGROUND)
+        // FUNGSI UTAMA UNTUK KIRIM WA CLICK-TO-CHAT
+        function kirimLaporanKeWhatsApp(keyId) {
+            const item = daftarPermintaan.find(i => (i.firebaseKey === keyId || i.id == keyId));
+            if (!item) {
+                alert("Data laporan tidak ditemukan.");
+                return;
+            }
+
+            let urgensiEmotikon = '🟢';
+            if(item.urgensi === 'Urgent') urgensiEmotikon = '🟡';
+            if(item.urgensi === 'Critical') urgensiEmotikon = '🔴';
+
+            // Menyusun format template pesan teks terenkripsi URL (%0A = baris baru)
+            const templatePesan = 
+                `*🛠️ TIKET MAINTENANCE OUTLET 🛠️*%0A` +
+                `-----------------------------------------%0A` +
+                `📅 *Tgl Temuan:* ${item.tanggal}%0A` +
+                `🏢 *Outlet/Cabang:* ${item.branch}%0A` +
+                `👤 *Pelapor:* ${item.pemohon} (${item.divisi})%0A` +
+                `🚨 *Urgensi:* ${urgensiEmotikon} ${item.urgensi.toUpperCase()}%0A%0A` +
+                `📦 *Fasilitas Bermasalah:*%0A` +
+                `↳ [${item.kategori}] *${item.namaBarang}*%0A%0A` +
+                `📝 *Kronologi Kendala:*%0A` +
+                `_"${item.keterangan}"_%0A%0A` +
+                `-----------------------------------------%0A` +
+                `📌 *Status Saat Ini:* ${item.status.toUpperCase()}%0A%0A` +
+                `👉 _Mohon segera dipantau dan dilakukan penanganan teknis. Terima kasih._`;
+
+            const urlWhatsApp = `https://api.whatsapp.com/send?phone=${targetWhatsAppNumber}&text=${templatePesan}`;
+            window.open(urlWhatsApp, '_blank');
+        }
+
+        async function simpanNomorWhatsApp() {
+            const inputNum = document.getElementById('inputNoWhatsApp').value.trim();
+            if(!inputNum) {
+                alert("Nomor tidak boleh kosong.");
+                return;
+            }
+            if(inputNum.startsWith('0') || inputNum.startsWith('+')) {
+                alert("Gunakan format langsung kode negara tanpa tanda '+' atau angka '0' di depan. Contoh: 628123456789");
+                return;
+            }
+            targetWhatsAppNumber = inputNum;
+            await updateFirebaseNode('whatsapp_target', targetWhatsAppNumber);
+            alert("Nomor WhatsApp berhasil tersimpan ke sistem Firebase!");
+        }
+
         function renderTabel() {
             const tabel = document.getElementById('tabelData');
             const thAdmin = document.getElementById('thAdministrasi');
@@ -576,11 +639,11 @@
             
             if(dataTerfilter.length === 0) {
                 document.getElementById('pesanKosong').classList.remove('hidden');
-                if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'px-4 py-3 text-center no-print';
+                if (thAdmin) thAdmin.className = 'px-4 py-3 text-center no-print';
                 return;
             }
             document.getElementById('pesanKosong').classList.add('hidden');
-            if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'px-4 py-3 text-center no-print';
+            if (thAdmin) thAdmin.className = 'px-4 py-3 text-center no-print';
 
             dataTerfilter.sort((a, b) => b.id - a.id);
 
@@ -605,21 +668,28 @@
                 }
                 mediaHtml += '</div>';
                 
+                let keyUntukAksi = item.firebaseKey || item.id;
+                
+                // Set Tombol Dinamis Berdasarkan Role Pengguna
                 let aksiHtml = '';
                 if(currentUserObj.role === 'admin' || currentUserObj.role === 'approver') {
-                    let keyUntukAksi = item.firebaseKey || item.id;
                     let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${keyUntukAksi}')" title="Hapus" class="bg-white hover:bg-rose-50 text-rose-600 p-1 rounded border border-slate-200 transition">🗑️</button>` : '';
                     
-                    aksiHtml = `<td class="px-4 py-3.5 text-center no-print">
+                    aksiHtml = `<td class="px-4 py-3.5 text-center no-print border-l border-slate-100">
                         <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="kirimLaporanKeWhatsApp('${keyUntukAksi}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-[11px] px-2.5 py-1 rounded font-bold transition flex items-center gap-1">💬 Kirim WA</button>
                             <button onclick="ubahStatus('${keyUntukAksi}', 'Sedang Diperbaiki')" class="bg-white hover:bg-blue-50 text-blue-600 border border-slate-200 text-[11px] px-2.5 py-1 rounded transition">Perbaiki</button>
                             <button onclick="ubahStatus('${keyUntukAksi}', 'Selesai')" class="bg-white hover:bg-emerald-50 text-emerald-600 border border-slate-200 text-[11px] px-2.5 py-1 rounded transition">Selesai</button>
                             ${btnHapus}
                         </div>
                     </td>`;
+                } else if(currentUserObj.role === 'staff') {
+                    // Tombol kirim WA tetap muncul untuk staff agar bisa langsung koordinasi secara cepat
+                    aksiHtml = `<td class="px-4 py-3.5 text-center no-print border-l border-slate-100">
+                        <button onclick="kirimLaporanKeWhatsApp('${keyUntukAksi}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-[11px] px-3 py-1.5 rounded font-bold transition flex items-center justify-center gap-1 mx-auto">💬 Kirim WA</button>
+                    </td>`;
                 }
 
-                // Efek Zebra-Striping & Garis Vertikal Tipis Persis Gaya POS Esensi Solusi Buana (ESB)
                 let rowBgColor = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/60';
 
                 tabel.innerHTML += `<tr class="${rowBgColor} hover:bg-slate-100/70 transition duration-100 border-b border-slate-200">
@@ -640,7 +710,7 @@
                     </td>
                     <td class="px-4 py-3.5 text-center whitespace-nowrap border-r border-slate-200"><span class="px-2 py-0.5 text-[10px] rounded border ${urgensiBadge}">${item.urgensi}</span></td>
                     <td class="px-4 py-3.5 text-center whitespace-nowrap border-r border-slate-200"><span class="px-2.5 py-0.5 border text-[11px] font-semibold rounded ${badgeColor}">${item.status}</span></td>
-                    ${currentUserObj.role !== 'staff' ? aksiHtml : ''}
+                    ${aksiHtml}
                 </tr>`;
             });
         }
@@ -766,6 +836,11 @@
         }
 
         function renderPanelSettingMaster() {
+            // Memasukkan nilai no WA saat panel setting dibuka
+            if(document.getElementById('inputNoWhatsApp')) {
+                document.getElementById('inputNoWhatsApp').value = targetWhatsAppNumber;
+            }
+
             const lBranch = document.getElementById('listMasterBranch'); if (lBranch) lBranch.innerHTML = '';
             masterBranches.forEach((b, idx) => {
                 lBranch.innerHTML += `<li class="flex items-center justify-between bg-slate-50 border p-2 rounded-xl mb-1 gap-2">

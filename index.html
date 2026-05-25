@@ -63,7 +63,7 @@
         </nav>
 
         <div class="container mx-auto px-4 max-w-6xl mb-16">
-            <div id="panelNav" class="flex p-1.5 bg-slate-200/70 backdrop-blur border border-slate-300/30 rounded-xl space-x-1.5 mb-8 max-w-xl mx-auto no-print">
+            <div id="panelNav" class="flex p-1.5 bg-slate-200/70 backdrop-blur border border-slate-300/30 rounded-xl space-x-1.5 mb-8 max-w-2xl mx-auto no-print">
                 <button id="btnPanelForm" onclick="switchPanel('form')" class="hidden w-full py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition duration-200">📝 Laporkan Kerusakan</button>
                 <button id="btnPanelTabel" onclick="switchPanel('tabel')" class="hidden w-full py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition duration-200">📊 Progress Perbaikan</button>
                 <button id="btnPanelSetting" onclick="switchPanel('setting')" class="hidden w-full py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition duration-200">⚙️ Pengaturan</button>
@@ -245,6 +245,25 @@
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-sm border p-6">
+                    <h3 class="text-sm font-bold text-rose-600 uppercase tracking-wider mb-4 flex items-center gap-1.5"><span>🗑️</span> Recycle Bin (Tiket Terhapus)</h3>
+                    <div class="overflow-x-auto border border-slate-100 rounded-xl">
+                        <table class="min-w-full divide-y text-xs text-slate-600">
+                            <thead class="bg-slate-50 font-bold text-slate-500 uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">Tgl Temuan</th>
+                                    <th class="px-4 py-3 text-left">Outlet</th>
+                                    <th class="px-4 py-3 text-left">Pelapor / Barang</th>
+                                    <th class="px-4 py-3 text-left">Kategori / Masalah</th>
+                                    <th class="px-4 py-3 text-center">Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelDataTrash" class="divide-y divide-slate-100 bg-white"></tbody>
+                        </table>
+                    </div>
+                    <div id="trashKosong" class="hidden text-center py-6 text-slate-400 font-medium bg-slate-50 mt-2 rounded-xl border border-dashed border-slate-200 text-xs">Tempat sampah kosong.</div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border p-6">
                     <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-1.5"><span>👥</span> Manajemen Akun Pengguna</h3>
                     <form onsubmit="tambahAkunUser(event)" class="bg-slate-50 border border-slate-100 p-5 rounded-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end mb-5">
                         <div>
@@ -291,7 +310,6 @@
     </div>
 
     <script>
-        // Masukkan URL Realtime Database Firebase Baru kamu di sini
         const FIREBASE_BASE_URL = 'https://e-maintenance-fnb-default-rtdb.asia-southeast1.firebasedatabase.app';
         const KEY_SESSION = 'maintenance_session_v1';
 
@@ -300,6 +318,7 @@
         let masterKategori = [];
         let masterUsers = [];
         let daftarPermintaan = [];
+        let daftarTrash = [];
         let appLogo = '';
         let currentUserObj = null;
         let pieChartInstance = null;
@@ -313,7 +332,6 @@
                 const res = await fetch(`${FIREBASE_BASE_URL}/.json`);
                 const db = await res.json();
                 
-                // JIKA DATABASE COCOK / SUDAH ADA DATA
                 if (db) {
                     masterBranches = db.branches ? Object.values(db.branches) : [];
                     masterDivisi = db.divisi ? Object.values(db.divisi) : [];
@@ -321,29 +339,26 @@
                     appLogo = db.logo || '';
                     daftarPermintaan = db.requests ? Object.keys(db.requests).map(key => ({ firebaseKey: key, ...db.requests[key] })) : [];
                     masterUsers = db.users ? Object.keys(db.users).map(key => ({ firebaseKey: key, ...db.users[key] })) : [];
+                    daftarTrash = db.trash ? Object.keys(db.trash).map(key => ({ firebaseKey: key, ...db.trash[key] })) : [];
                 }
 
-                // AKTIVASI AKUN PANCINGAN: Jika database baru dan belum ada user sama sekali
                 if (masterUsers.length === 0) {
                     const defaultAdmin = {
                         username: "admin",
-                        password: "admin", // <--- Kamu bisa ganti password ini sesuka hati
+                        password: "admin", 
                         role: "admin",
                         lockBranch: "ALL"
                     };
                     
-                    // Daftarkan otomatis ke Firebase
                     const setupRes = await fetch(`${FIREBASE_BASE_URL}/users.json`, { 
                         method: 'POST', 
                         body: JSON.stringify(defaultAdmin) 
                     });
                     const setupData = await setupRes.json();
                     
-                    // Masukkan ke data lokal biar bisa langsung login
                     defaultAdmin.firebaseKey = setupData.name;
                     masterUsers.push(defaultAdmin);
 
-                    // Buatkan juga data master default dasar agar web tidak kosong melompong
                     if (masterBranches.length === 0) {
                         masterBranches = ["Outlet Cipete", "Outlet Bekasi", "Outlet Bogor", "Outlet Bintaro"];
                         await updateFirebaseNode('branches', masterBranches);
@@ -588,7 +603,7 @@
                 
                 let aksiHtml = '';
                 if(currentUserObj.role === 'admin' || currentUserObj.role === 'approver') {
-                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="hapusTiket('${item.firebaseKey}')" title="Hapus" class="bg-rose-50 text-rose-700 p-1 rounded border border-rose-200">🗑️</button>` : '';
+                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${item.firebaseKey}')" title="Hapus ke Sampah" class="bg-rose-50 text-rose-700 p-1 rounded border border-rose-200">🗑️</button>` : '';
                     
                     aksiHtml = `<td class="px-3 py-2 text-center no-print border-b border-slate-100">
                         <div class="flex flex-col gap-1 items-center justify-center">
@@ -699,26 +714,47 @@
             muatDataDariFirebase().then(() => renderTabel());
         }
 
-        async function hapusTiket(firebaseKey) {
-            if(confirm('Hapus tiket maintenance ini secara permanen?')) {
-                await fetch(`${FIREBASE_BASE_URL}/requests/${firebaseKey}.json`, { method: 'DELETE' });
-                muatDataDariFirebase().then(() => renderTabel());
+        async function pindahkanKeTrash(firebaseKey) {
+            if(confirm('Pindahkan tiket maintenance ini ke Recycle Bin?')) {
+                const targetData = daftarPermintaan.find(item => item.firebaseKey === firebaseKey);
+                if(targetData) {
+                    const cleanData = {...targetData};
+                    delete cleanData.firebaseKey; 
+                    
+                    await fetch(`${FIREBASE_BASE_URL}/trash.json`, { method: 'POST', body: JSON.stringify(cleanData) });
+                    await fetch(`${FIREBASE_BASE_URL}/requests/${firebaseKey}.json`, { method: 'DELETE' });
+                    muatDataDariFirebase().then(() => renderTabel());
+                }
             }
         }
 
         function renderPanelSettingMaster() {
             const lBranch = document.getElementById('listMasterBranch'); lBranch.innerHTML = '';
             masterBranches.forEach((b, idx) => {
-                lBranch.innerHTML += `<li class="flex justify-between bg-slate-50 border p-2 rounded-xl mb-1"><span>${b}</span><button onclick="deleteMasterItem('branch', ${idx})" class="text-rose-500 font-bold">✕</button></li>`;
+                lBranch.innerHTML += `<li class="flex items-center justify-between bg-slate-50 border p-2 rounded-xl mb-1 gap-2">
+                    <input type="text" value="${b}" onchange="editMasterItem('branch', ${idx}, this.value)" class="bg-transparent text-xs w-full outline-none focus:bg-white focus:px-2 py-0.5 rounded border border-transparent focus:border-slate-300">
+                    <button onclick="deleteMasterItem('branch', ${idx})" class="text-rose-500 font-bold px-1">✕</button>
+                </li>`;
             });
+
             const lDivisi = document.getElementById('listMasterDivisi'); lDivisi.innerHTML = '';
             masterDivisi.forEach((d, idx) => {
-                lDivisi.innerHTML += `<li class="flex justify-between bg-slate-50 border p-2 rounded-xl mb-1"><span>${d}</span><button onclick="deleteMasterItem('divisi', ${idx})" class="text-rose-500 font-bold">✕</button></li>`;
+                lDivisi.innerHTML += `<li class="flex items-center justify-between bg-slate-50 border p-2 rounded-xl mb-1 gap-2">
+                    <input type="text" value="${d}" onchange="editMasterItem('divisi', ${idx}, this.value)" class="bg-transparent text-xs w-full outline-none focus:bg-white focus:px-2 py-0.5 rounded border border-transparent focus:border-slate-300">
+                    <button onclick="deleteMasterItem('divisi', ${idx})" class="text-rose-500 font-bold px-1">✕</button>
+                </li>`;
             });
+
             const lKategori = document.getElementById('listMasterKategori'); lKategori.innerHTML = '';
             masterKategori.forEach((k, idx) => {
-                lKategori.innerHTML += `<li class="flex justify-between bg-slate-50 border p-2 rounded-xl mb-1"><span>${k}</span><button onclick="deleteMasterItem('kategori', ${idx})" class="text-rose-500 font-bold">✕</button></li>`;
+                lKategori.innerHTML += `<li class="flex items-center justify-between bg-slate-50 border p-2 rounded-xl mb-1 gap-2">
+                    <input type="text" value="${k}" onchange="editMasterItem('kategori', ${idx}, this.value)" class="bg-transparent text-xs w-full outline-none focus:bg-white focus:px-2 py-0.5 rounded border border-transparent focus:border-slate-300">
+                    <button onclick="deleteMasterItem('kategori', ${idx})" class="text-rose-500 font-bold px-1">✕</button>
+                </li>`;
             });
+
+            renderTrashTable();
+
             const tUser = document.getElementById('tabelDataUser'); tUser.innerHTML = '';
             masterUsers.forEach((u) => {
                 let disabledHapus = u.username === 'admin' ? 'disabled class="text-slate-300"' : 'class="text-rose-600 font-bold"';
@@ -730,6 +766,60 @@
                     <td class="px-4 py-2 text-center border-b"><button onclick="deleteMasterItem('user', '${u.firebaseKey}')" ${disabledHapus}>Hapus</button></td>
                 </tr>`;
             });
+        }
+
+        function renderTrashTable() {
+            const tTrash = document.getElementById('tabelDataTrash'); 
+            tTrash.innerHTML = '';
+            
+            if(daftarTrash.length === 0) {
+                document.getElementById('trashKosong').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('trashKosong').classList.add('hidden');
+
+            daftarTrash.forEach(item => {
+                tTrash.innerHTML += `<tr>
+                    <td class="px-4 py-2 border-b text-slate-500">${item.tanggal}</td>
+                    <td class="px-4 py-2 border-b font-bold text-slate-700">${item.branch}</td>
+                    <td class="px-4 py-2 border-b"><div><b>${item.pemohon}</b></div><div class="text-[11px] text-slate-800">${item.namaBarang}</div></td>
+                    <td class="px-4 py-2 border-b"><div><span class="bg-slate-100 px-1 rounded text-[10px] font-bold">${item.kategori}</span></div><div class="text-slate-400 text-[10px] truncate max-w-[15px]">${item.keterangan}</div></td>
+                    <td class="px-4 py-2 border-b text-center">
+                        <div class="flex gap-1.5 justify-center">
+                            <button onclick="restoreTiket('${item.firebaseKey}')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded text-[11px] font-medium">🔄 Restore</button>
+                            <button onclick="hapusPermanenTiket('${item.firebaseKey}')" class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-1 rounded text-[11px] font-medium">❌ Hapus Permanen</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        async function editMasterItem(type, index, newValue) {
+            if(!newValue.trim()) return;
+            if(type === 'branch') { masterBranches[index] = newValue.trim(); await updateFirebaseNode('branches', masterBranches); }
+            else if(type === 'divisi') { masterDivisi[index] = newValue.trim(); await updateFirebaseNode('divisi', masterDivisi); }
+            else if(type === 'kategori') { masterKategori[index] = newValue.trim(); await updateFirebaseNode('kategori', masterKategori); }
+            await muatDataDariFirebase(); buildSelectOptions();
+        }
+
+        async function restoreTiket(firebaseKey) {
+            const targetData = daftarTrash.find(item => item.firebaseKey === firebaseKey);
+            if(targetData) {
+                const cleanData = {...targetData};
+                delete cleanData.firebaseKey;
+                
+                await fetch(`${FIREBASE_BASE_URL}/requests.json`, { method: 'POST', body: JSON.stringify(cleanData) });
+                await fetch(`${FIREBASE_BASE_URL}/trash/${firebaseKey}.json`, { method: 'DELETE' });
+                alert('Tiket berhasil dipulihkan kembali ke monitoring!');
+                await muatDataDariFirebase(); renderPanelSettingMaster();
+            }
+        }
+
+        async function hapusPermanenTiket(firebaseKey) {
+            if(confirm('Hapus tiket ini secara permanen dari database? Tindakan ini tidak bisa dibatalkan.')) {
+                await fetch(`${FIREBASE_BASE_URL}/trash/${firebaseKey}.json`, { method: 'DELETE' });
+                await muatDataDariFirebase(); renderPanelSettingMaster();
+            }
         }
 
         async function addMasterItem(event, type) {

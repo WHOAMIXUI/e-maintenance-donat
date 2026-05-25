@@ -313,7 +313,7 @@
         const FIREBASE_BASE_URL = 'https://e-maintenance-fnb-default-rtdb.asia-southeast1.firebasedatabase.app';
         const KEY_SESSION = 'maintenance_session_v1';
 
-        // Data Arrays dengan Default Fallback jika Firebase baru dibuat atau kosong
+        // Data Arrays dengan Default Fallback
         let masterBranches = ["Outlet Cipete", "Outlet Bekasi", "Outlet Bogor", "Outlet Bintaro"];
         let masterDivisi = ["Kitchen", "Bar Area", "Dining Room", "Kasir / Depan"];
         let masterKategori = ["Kelistrikan", "Mesin Kopi / Bar", "Chiller / Freezer", "Sipil / Bangunan"];
@@ -338,17 +338,25 @@
                 const db = await res.json();
                 
                 if (db) {
-                    if (db.branches) masterBranches = Object.values(db.branches);
-                    if (db.divisi) masterDivisi = Object.values(db.divisi);
-                    if (db.kategori) masterKategori = Object.values(db.kategori);
+                    if (db.branches) masterBranches = Object.values(db.branches).filter(Boolean);
+                    if (db.divisi) masterDivisi = Object.values(db.divisi).filter(Boolean);
+                    if (db.kategori) masterKategori = Object.values(db.kategori).filter(Boolean);
                     appLogo = db.logo || '';
                     daftarPermintaan = db.requests ? Object.keys(db.requests).map(key => ({ firebaseKey: key, ...db.requests[key] })) : [];
                     daftarTrash = db.trash ? Object.keys(db.trash).map(key => ({ firebaseKey: key, ...db.trash[key] })) : [];
                     if (db.users) masterUsers = Object.keys(db.users).map(key => ({ firebaseKey: key, ...db.users[key] }));
+
+                    // Simpan backup lokal dari Firebase
+                    localStorage.setItem('local_branches', JSON.stringify(masterBranches));
+                    localStorage.setItem('local_divisi', JSON.stringify(masterDivisi));
+                    localStorage.setItem('local_kategori', JSON.stringify(masterKategori));
                 }
             } catch (err) { 
-                console.warn("Gagal terhubung ke Firebase, menggunakan database lokal cadangan (Offline Mode):", err);
-                // Jika offline/error, ambil data contoh dari localStorage agar fitur monitor tetap berfungsi berjalan
+                console.warn("Gagal terhubung ke Firebase, menggunakan database lokal:", err);
+                if(localStorage.getItem('local_branches')) masterBranches = JSON.parse(localStorage.getItem('local_branches'));
+                if(localStorage.getItem('local_divisi')) masterDivisi = JSON.parse(localStorage.getItem('local_divisi'));
+                if(localStorage.getItem('local_kategori')) masterKategori = JSON.parse(localStorage.getItem('local_kategori'));
+                
                 const dataLokal = localStorage.getItem('local_backup_requests');
                 if (dataLokal) daftarPermintaan = JSON.parse(dataLokal);
             }
@@ -691,11 +699,9 @@
             };
 
             try {
-                // Kirim ke Firebase Database
                 const response = await fetch(`${FIREBASE_BASE_URL}/requests.json`, { method: 'POST', body: JSON.stringify(dataBaru) });
                 if(!response.ok) throw new Error("Offline save");
             } catch(e) {
-                // Save Lokal jika Firebase bermasalah
                 daftarPermintaan.push(dataBaru);
                 localStorage.setItem('local_backup_requests', JSON.stringify(daftarPermintaan));
             }
@@ -704,7 +710,6 @@
             setDefaultTanggal();
             alert('Tiket kerusakan berhasil dikirim ke Tim Teknisi!');
             
-            // Auto Link Tab & sinkronisasi data langsung terbuka pasca submit form
             await muatDataDariFirebase();
             switchPanel('tabel');
             
@@ -721,7 +726,6 @@
         }
 
         async function ubahStatus(keyId, stat) {
-            // Update Array Lokal Terlebih dahulu agar responsif
             const lokalIndex = daftarPermintaan.findIndex(item => (item.firebaseKey === keyId || item.id == keyId));
             if(lokalIndex !== -1) daftarPermintaan[lokalIndex].status = stat;
             
@@ -824,11 +828,26 @@
 
         async function editMasterItem(type, index, newValue) {
             if(!newValue.trim()) return;
-            if(type === 'branch') { masterBranches[index] = newValue.trim(); await updateFirebaseNode('branches', masterBranches); }
-            else if(type === 'divisi') { masterDivisi[index] = newValue.trim(); await updateFirebaseNode('divisi', masterDivisi); }
-            else if(type === 'kategori') { masterKategori[index] = newValue.trim(); await updateFirebaseNode('kategori', masterKategori); }
+            if(type === 'branch') { 
+                masterBranches[index] = newValue.trim(); 
+                await updateFirebaseNode('branches', masterBranches); 
+                localStorage.setItem('local_branches', JSON.stringify(masterBranches));
+            }
+            else if(type === 'divisi') { 
+                masterDivisi[index] = newValue.trim(); 
+                await updateFirebaseNode('divisi', masterDivisi); 
+                localStorage.setItem('local_divisi', JSON.stringify(masterDivisi));
+            }
+            else if(type === 'kategori') { 
+                masterKategori[index] = newValue.trim(); 
+                await updateFirebaseNode('kategori', masterKategori); 
+                localStorage.setItem('local_kategori', JSON.stringify(masterKategori));
+            }
             buildSelectOptions();
-            await muatDataDariFirebase();
+            setTimeout(async () => {
+                await muatDataDariFirebase();
+                renderPanelSettingMaster();
+            }, 500);
         }
 
         async function restoreTiket(keyId) {
@@ -866,42 +885,68 @@
                 const inp = document.getElementById('addBranchInput'); 
                 if(inp && inp.value.trim()) {
                     masterBranches.push(inp.value.trim());
-                    inp.value = ''; await updateFirebaseNode('branches', masterBranches);
+                    inp.value = ''; 
+                    await updateFirebaseNode('branches', masterBranches);
+                    localStorage.setItem('local_branches', JSON.stringify(masterBranches));
                 }
             } else if(type === 'divisi') {
                 const inp = document.getElementById('addDivisiInput'); 
                 if(inp && inp.value.trim()) {
                     masterDivisi.push(inp.value.trim());
-                    inp.value = ''; await updateFirebaseNode('divisi', masterDivisi);
+                    inp.value = ''; 
+                    await updateFirebaseNode('divisi', masterDivisi);
+                    localStorage.setItem('local_divisi', JSON.stringify(masterDivisi));
                 }
             } else if(type === 'kategori') {
                 const inp = document.getElementById('addKategoriInput'); 
                 if(inp && inp.value.trim()) {
                     masterKategori.push(inp.value.trim());
-                    inp.value = ''; await updateFirebaseNode('kategori', masterKategori);
+                    inp.value = ''; 
+                    await updateFirebaseNode('kategori', masterKategori);
+                    localStorage.setItem('local_kategori', JSON.stringify(masterKategori));
                 }
             }
             buildSelectOptions();
-            renderPanelSettingMaster();
-            await muatDataDariFirebase();
+            setTimeout(async () => {
+                await muatDataDariFirebase();
+                renderPanelSettingMaster();
+            }, 500);
         }
 
         async function deleteMasterItem(type, keyOrIndex) {
             if(!confirm('Hapus komponen ini?')) return;
-            if(type === 'branch') { masterBranches.splice(keyOrIndex, 1); await updateFirebaseNode('branches', masterBranches); }
-            else if(type === 'divisi') { masterDivisi.splice(keyOrIndex, 1); await updateFirebaseNode('divisi', masterDivisi); }
-            else if(type === 'kategori') { masterKategori.splice(keyOrIndex, 1); await updateFirebaseNode('kategori', masterKategori); }
+            if(type === 'branch') { 
+                masterBranches.splice(keyOrIndex, 1); 
+                await updateFirebaseNode('branches', masterBranches); 
+                localStorage.setItem('local_branches', JSON.stringify(masterBranches));
+            }
+            else if(type === 'divisi') { 
+                masterDivisi.splice(keyOrIndex, 1); 
+                await updateFirebaseNode('divisi', masterDivisi); 
+                localStorage.setItem('local_divisi', JSON.stringify(masterDivisi));
+            }
+            else if(type === 'kategori') { 
+                masterKategori.splice(keyOrIndex, 1); 
+                await updateFirebaseNode('kategori', masterKategori); 
+                localStorage.setItem('local_kategori', JSON.stringify(masterKategori));
+            }
             else if(type === 'user') { 
                 try {
                     await fetch(`${FIREBASE_BASE_URL}/users/${keyOrIndex}.json`, { method: 'DELETE' }); 
                 } catch(e) {
                     masterUsers = masterUsers.filter(u => u.username !== keyOrIndex);
                 }
-                await muatDataDariFirebase(); renderPanelSettingMaster(); return;
+                setTimeout(async () => {
+                    await muatDataDariFirebase(); 
+                    renderPanelSettingMaster();
+                }, 500);
+                return;
             }
             buildSelectOptions();
-            renderPanelSettingMaster();
-            await muatDataDariFirebase();
+            setTimeout(async () => {
+                await muatDataDariFirebase();
+                renderPanelSettingMaster();
+            }, 500);
         }
 
         function toggleLockOptionsBasedOnRole() {
@@ -924,9 +969,12 @@
             }
             document.getElementById('newUsername').value = ''; 
             document.getElementById('newPassword').value = '';
-            await muatDataDariFirebase(); 
-            renderPanelSettingMaster(); 
-            alert('User tersimpan!');
+            
+            setTimeout(async () => {
+                await muatDataDariFirebase(); 
+                renderPanelSettingMaster(); 
+                alert('User tersimpan!');
+            }, 500);
         }
 
         async function gantiLogoSistem(event) {

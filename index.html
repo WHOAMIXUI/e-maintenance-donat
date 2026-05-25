@@ -195,7 +195,7 @@
                                     <th class="px-4 py-3 min-w-[240px] border-r border-slate-200">Kronologi Kendala</th>
                                     <th class="px-4 py-3 text-center border-r border-slate-200">Urgensi</th>
                                     <th class="px-4 py-3 text-center border-r border-slate-200">Status</th>
-                                    <th id="thAdministrasi" class="px-4 py-3 text-center w-28 no-print">Aksi</th>
+                                    <th id="thAdministrasi" class="px-4 py-3 text-center w-40 no-print">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelData" class="divide-y divide-slate-100 text-xs text-slate-700 bg-white">
@@ -668,20 +668,28 @@
                 
                 let aksiHtml = '';
                 if(currentUserObj.role === 'admin' || currentUserObj.role === 'approver') {
-                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${keyUntukAksi}')" title="Hapus Laporan" class="bg-rose-50 hover:bg-rose-100 text-rose-600 w-8 h-8 rounded-xl border border-rose-200 shadow-sm flex items-center justify-center transition active:scale-95">🗑️</button>` : '';
+                    let opsiHapus = currentUserObj.role === 'admin' ? `<option value="hapus">🗑️ Pindahkan ke Trash</option>` : '';
                     
-                    aksiHtml = `<td class="px-3 py-3.5 no-print border-l border-slate-100">
-                        <div class="flex items-center justify-center gap-1.5">
-                            <button onclick="kirimLaporanKeWhatsApp('${keyUntukAksi}')" title="Kirim Laporan ke WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 w-8 h-8 rounded-xl shadow-sm flex items-center justify-center transition active:scale-95">💬</button>
-                            <button onclick="ubahStatus('${keyUntukAksi}', 'Sedang Diperbaiki')" title="Proses Perbaikan" class="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 w-8 h-8 rounded-xl shadow-sm flex items-center justify-center transition active:scale-95">🛠️</button>
-                            <button onclick="ubahStatus('${keyUntukAksi}', 'Selesai')" title="Selesai / Normal" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 w-8 h-8 rounded-xl shadow-sm flex items-center justify-center transition active:scale-95">✅</button>
-                            ${btnHapus}
+                    aksiHtml = `<td class="px-3 py-3.5 no-print border-l border-slate-100 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <select id="actionSelect_${keyUntukAksi}" class="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-1 focus:ring-cyan-500 transition cursor-pointer">
+                                <option value="">-- Pilih Aksi --</option>
+                                <option value="wa">💬 Kirim WhatsApp</option>
+                                <option value="proses">🛠️ Proses Kerja</option>
+                                <option value="selesai">✅ Selesai / Normal</option>
+                                ${opsiHapus}
+                            </select>
+                            <button onclick="eksekusiAksiDropdown('${keyUntukAksi}')" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] transition active:scale-95 shadow-sm">Go</button>
                         </div>
                     </td>`;
                 } else if(currentUserObj.role === 'staff') {
-                    aksiHtml = `<td class="px-3 py-3.5 no-print border-l border-slate-100">
-                        <div class="flex items-center justify-center">
-                            <button onclick="kirimLaporanKeWhatsApp('${keyUntukAksi}')" title="Kirim Laporan ke WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 w-8 h-8 rounded-xl shadow-sm flex items-center justify-center transition active:scale-95">💬</button>
+                    aksiHtml = `<td class="px-3 py-3.5 no-print border-l border-slate-100 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <select id="actionSelect_${keyUntukAksi}" class="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-1 focus:ring-cyan-500 transition cursor-pointer">
+                                <option value="">-- Pilih Aksi --</option>
+                                <option value="wa">💬 Kirim WhatsApp</option>
+                            </select>
+                            <button onclick="eksekusiAksiDropdown('${keyUntukAksi}')" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] transition active:scale-95 shadow-sm">Go</button>
                         </div>
                     </td>`;
                 }
@@ -709,6 +717,37 @@
                     ${aksiHtml}
                 </tr>`;
             });
+        }
+
+        function eksekusiAksiDropdown(keyId) {
+            const selectElement = document.getElementById(`actionSelect_${keyId}`);
+            if (!selectElement) return;
+
+            const pilihan = selectElement.value;
+
+            if (pilihan === "") {
+                alert("Silakan pilih aksi terlebih dahulu!");
+                return;
+            }
+
+            switch (pilihan) {
+                case "wa":
+                    kirimLaporanKeWhatsApp(keyId);
+                    break;
+                case "proses":
+                    ubahStatus(keyId, 'Sedang Diperbaiki');
+                    break;
+                case "selesai":
+                    ubahStatus(keyId, 'Selesai');
+                    break;
+                case "hapus":
+                    pindahkanKeTrash(keyId);
+                    break;
+                default:
+                    break;
+            }
+            
+            selectElement.value = ""; // Reset dropdown kembali ke default
         }
 
         function convertFileToBase64(file) {

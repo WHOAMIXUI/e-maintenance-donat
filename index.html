@@ -422,6 +422,8 @@
             const sKategoriFilter = document.getElementById('filterKategori');
             const sNewUserBranch = document.getElementById('newLockBranch');
 
+            if (!sBranchForm || !sDivisiForm || !sKategoriForm || !sBranchFilter || !sKategoriFilter || !sNewUserBranch) return;
+
             sBranchForm.innerHTML = '<option value="">-- Pilih Outlet --</option>';
             masterBranches.forEach(b => sBranchForm.innerHTML += `<option value="${b}">${b}</option>`);
             sBranchFilter.innerHTML = '<option value="ALL">-- Semua Outlet --</option>';
@@ -547,6 +549,7 @@
         function renderTabel() {
             const tabel = document.getElementById('tabelData');
             const thAdmin = document.getElementById('thAdministrasi');
+            if (!tabel) return;
             tabel.innerHTML = '';
             
             let dataTerfilter = daftarPermintaan;
@@ -572,11 +575,11 @@
             
             if(dataTerfilter.length === 0) {
                 document.getElementById('pesanKosong').classList.remove('hidden');
-                thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'w-40 px-4 py-3.5 text-center no-print';
+                if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'w-40 px-4 py-3.5 text-center no-print';
                 return;
             }
             document.getElementById('pesanKosong').classList.add('hidden');
-            thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'w-40 px-4 py-3.5 text-center no-print';
+            if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'w-40 px-4 py-3.5 text-center no-print';
 
             dataTerfilter.sort((a, b) => b.id - a.id);
 
@@ -729,7 +732,7 @@
         }
 
         function renderPanelSettingMaster() {
-            const lBranch = document.getElementById('listMasterBranch'); lBranch.innerHTML = '';
+            const lBranch = document.getElementById('listMasterBranch'); if (lBranch) lBranch.innerHTML = '';
             masterBranches.forEach((b, idx) => {
                 lBranch.innerHTML += `<li class="flex items-center justify-between bg-slate-50 border p-2 rounded-xl mb-1 gap-2">
                     <input type="text" value="${b}" onchange="editMasterItem('branch', ${idx}, this.value)" class="bg-transparent text-xs w-full outline-none focus:bg-white focus:px-2 py-0.5 rounded border border-transparent focus:border-slate-300">
@@ -737,7 +740,7 @@
                 </li>`;
             });
 
-            const lDivisi = document.getElementById('listMasterDivisi'); lDivisi.innerHTML = '';
+            const lDivisi = document.getElementById('listMasterDivisi'); if (lDivisi) lDivisi.innerHTML = '';
             masterDivisi.forEach((d, idx) => {
                 lDivisi.innerHTML += `<li class="flex items-center justify-between bg-slate-50 border p-2 rounded-xl mb-1 gap-2">
                     <input type="text" value="${d}" onchange="editMasterItem('divisi', ${idx}, this.value)" class="bg-transparent text-xs w-full outline-none focus:bg-white focus:px-2 py-0.5 rounded border border-transparent focus:border-slate-300">
@@ -745,7 +748,7 @@
                 </li>`;
             });
 
-            const lKategori = document.getElementById('listMasterKategori'); lKategori.innerHTML = '';
+            const lKategori = document.getElementById('listMasterKategori'); if (lKategori) lKategori.innerHTML = '';
             masterKategori.forEach((k, idx) => {
                 lKategori.innerHTML += `<li class="flex items-center justify-between bg-slate-50 border p-2 rounded-xl mb-1 gap-2">
                     <input type="text" value="${k}" onchange="editMasterItem('kategori', ${idx}, this.value)" class="bg-transparent text-xs w-full outline-none focus:bg-white focus:px-2 py-0.5 rounded border border-transparent focus:border-slate-300">
@@ -755,7 +758,7 @@
 
             renderTrashTable();
 
-            const tUser = document.getElementById('tabelDataUser'); tUser.innerHTML = '';
+            const tUser = document.getElementById('tabelDataUser'); if (tUser) tUser.innerHTML = '';
             masterUsers.forEach((u) => {
                 let disabledHapus = u.username === 'admin' ? 'disabled class="text-slate-300"' : 'class="text-rose-600 font-bold"';
                 tUser.innerHTML += `<tr>
@@ -770,6 +773,7 @@
 
         function renderTrashTable() {
             const tTrash = document.getElementById('tabelDataTrash'); 
+            if (!tTrash) return;
             tTrash.innerHTML = '';
             
             if(daftarTrash.length === 0) {
@@ -796,10 +800,22 @@
 
         async function editMasterItem(type, index, newValue) {
             if(!newValue.trim()) return;
-            if(type === 'branch') { masterBranches[index] = newValue.trim(); await updateFirebaseNode('branches', masterBranches); }
-            else if(type === 'divisi') { masterDivisi[index] = newValue.trim(); await updateFirebaseNode('divisi', masterDivisi); }
-            else if(type === 'kategori') { masterKategori[index] = newValue.trim(); await updateFirebaseNode('kategori', masterKategori); }
-            await muatDataDariFirebase(); buildSelectOptions();
+            if(type === 'branch') { 
+                masterBranches[index] = newValue.trim(); 
+                buildSelectOptions(); 
+                await updateFirebaseNode('branches', masterBranches); 
+            }
+            else if(type === 'divisi') { 
+                masterDivisi[index] = newValue.trim(); 
+                buildSelectOptions(); 
+                await updateFirebaseNode('divisi', masterDivisi); 
+            }
+            else if(type === 'kategori') { 
+                masterKategori[index] = newValue.trim(); 
+                buildSelectOptions(); 
+                await updateFirebaseNode('kategori', masterKategori); 
+            }
+            await muatDataDariFirebase();
         }
 
         async function restoreTiket(firebaseKey) {
@@ -825,25 +841,63 @@
         async function addMasterItem(event, type) {
             event.preventDefault();
             if(type === 'branch') {
-                const inp = document.getElementById('addBranchInput'); if(inp.value.trim()) masterBranches.push(inp.value.trim());
-                inp.value = ''; await updateFirebaseNode('branches', masterBranches);
+                const inp = document.getElementById('addBranchInput'); 
+                if(inp && inp.value.trim()) {
+                    masterBranches.push(inp.value.trim());
+                    inp.value = ''; 
+                    buildSelectOptions(); 
+                    renderPanelSettingMaster(); 
+                    await updateFirebaseNode('branches', masterBranches);
+                }
             } else if(type === 'divisi') {
-                const inp = document.getElementById('addDivisiInput'); if(inp.value.trim()) masterDivisi.push(inp.value.trim());
-                inp.value = ''; await updateFirebaseNode('divisi', masterDivisi);
+                const inp = document.getElementById('addDivisiInput'); 
+                if(inp && inp.value.trim()) {
+                    masterDivisi.push(inp.value.trim());
+                    inp.value = ''; 
+                    buildSelectOptions(); 
+                    renderPanelSettingMaster(); 
+                    await updateFirebaseNode('divisi', masterDivisi);
+                }
             } else if(type === 'kategori') {
-                const inp = document.getElementById('addKategoriInput'); if(inp.value.trim()) masterKategori.push(inp.value.trim());
-                inp.value = ''; await updateFirebaseNode('kategori', masterKategori);
+                const inp = document.getElementById('addKategoriInput'); 
+                if(inp && inp.value.trim()) {
+                    masterKategori.push(inp.value.trim());
+                    inp.value = ''; 
+                    buildSelectOptions(); 
+                    renderPanelSettingMaster(); 
+                    await updateFirebaseNode('kategori', masterKategori);
+                }
             }
-            await muatDataDariFirebase(); buildSelectOptions(); renderPanelSettingMaster();
+            await muatDataDariFirebase();
         }
 
         async function deleteMasterItem(type, keyOrIndex) {
             if(!confirm('Hapus komponen ini?')) return;
-            if(type === 'branch') { masterBranches.splice(keyOrIndex, 1); await updateFirebaseNode('branches', masterBranches); }
-            else if(type === 'divisi') { masterDivisi.splice(keyOrIndex, 1); await updateFirebaseNode('divisi', masterDivisi); }
-            else if(type === 'kategori') { masterKategori.splice(keyOrIndex, 1); await updateFirebaseNode('kategori', masterKategori); }
-            else if(type === 'user') { await fetch(`${FIREBASE_BASE_URL}/users/${keyOrIndex}.json`, { method: 'DELETE' }); }
-            await muatDataDariFirebase(); buildSelectOptions(); renderPanelSettingMaster();
+            if(type === 'branch') { 
+                masterBranches.splice(keyOrIndex, 1); 
+                buildSelectOptions(); 
+                renderPanelSettingMaster(); 
+                await updateFirebaseNode('branches', masterBranches); 
+            }
+            else if(type === 'divisi') { 
+                masterDivisi.splice(keyOrIndex, 1); 
+                buildSelectOptions(); 
+                renderPanelSettingMaster(); 
+                await updateFirebaseNode('divisi', masterDivisi); 
+            }
+            else if(type === 'kategori') { 
+                masterKategori.splice(keyOrIndex, 1); 
+                buildSelectOptions(); 
+                renderPanelSettingMaster(); 
+                await updateFirebaseNode('kategori', masterKategori); 
+            }
+            else if(type === 'user') { 
+                await fetch(`${FIREBASE_BASE_URL}/users/${keyOrIndex}.json`, { method: 'DELETE' }); 
+                await muatDataDariFirebase(); 
+                renderPanelSettingMaster();
+                return;
+            }
+            await muatDataDariFirebase();
         }
 
         function toggleLockOptionsBasedOnRole() {

@@ -195,7 +195,7 @@
                                     <th class="px-4 py-3 min-w-[240px] border-r border-slate-200">Kronologi Kendala</th>
                                     <th class="px-4 py-3 text-center border-r border-slate-200">Urgensi</th>
                                     <th class="px-4 py-3 text-center border-r border-slate-200">Status</th>
-                                    <th id="thAdministrasi" class="px-4 py-3 text-center no-print">Aksi Kendali</th>
+                                    <th id="thAdministrasi" class="px-4 py-3 text-center w-28 no-print">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelData" class="divide-y divide-slate-100 text-xs text-slate-700 bg-white">
@@ -212,7 +212,7 @@
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 max-w-xl">
                         <label class="block text-xs font-bold text-slate-600 mb-1.5">Nomor WhatsApp Tujuan (Teknisi / Koordinator)</label>
                         <div class="flex gap-2">
-                            <input type="text" id="inputNoWhatsApp" placeholder="Contoh: 6282343487908" class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-white focus:ring-2 focus:ring-emerald-500">
+                            <input type="text" id="inputNoWhatsApp" placeholder="Contoh: 628123456789" class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-white focus:ring-2 focus:ring-emerald-500">
                             <button onclick="simpanNomorWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-xl font-bold transition shadow-sm">Simpan</button>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1.5">*Gunakan kode negara di depan nomor (62), jangan pakai tanda + atau spasi.</p>
@@ -338,7 +338,7 @@
         let daftarPermintaan = [];
         let daftarTrash = [];
         let appLogo = '';
-        let targetWhatsAppNumber = '628123456789'; // Nomor fallback default
+        let targetWhatsAppNumber = '6282343487908'; // Locked Target Number
         let currentUserObj = null;
         let pieChartInstance = null;
 
@@ -563,7 +563,6 @@
             });
         }
 
-        // FUNGSI UTAMA UNTUK KIRIM WA CLICK-TO-CHAT
         function kirimLaporanKeWhatsApp(keyId) {
             const item = daftarPermintaan.find(i => (i.firebaseKey === keyId || i.id == keyId));
             if (!item) {
@@ -575,7 +574,6 @@
             if(item.urgensi === 'Urgent') urgensiEmotikon = '🟡';
             if(item.urgensi === 'Critical') urgensiEmotikon = '🔴';
 
-            // Menyusun format template pesan teks terenkripsi URL (%0A = baris baru)
             const templatePesan = 
                 `*🛠️ TIKET MAINTENANCE OUTLET 🛠️*%0A` +
                 `-----------------------------------------%0A` +
@@ -602,7 +600,7 @@
                 return;
             }
             if(inputNum.startsWith('0') || inputNum.startsWith('+')) {
-                alert("Gunakan format langsung kode negara tanpa tanda '+' atau angka '0' di depan. Contoh: 628123456789");
+                alert("Gunakan format langsung kode negara tanpa tanda '+' atau angka '0' di depan. Contoh: 6282343487908");
                 return;
             }
             targetWhatsAppNumber = inputNum;
@@ -639,11 +637,9 @@
             
             if(dataTerfilter.length === 0) {
                 document.getElementById('pesanKosong').classList.remove('hidden');
-                if (thAdmin) thAdmin.className = 'px-4 py-3 text-center no-print';
                 return;
             }
             document.getElementById('pesanKosong').classList.add('hidden');
-            if (thAdmin) thAdmin.className = 'px-4 py-3 text-center no-print';
 
             dataTerfilter.sort((a, b) => b.id - a.id);
 
@@ -670,23 +666,23 @@
                 
                 let keyUntukAksi = item.firebaseKey || item.id;
                 
-                // Set Tombol Dinamis Berdasarkan Role Pengguna
                 let aksiHtml = '';
                 if(currentUserObj.role === 'admin' || currentUserObj.role === 'approver') {
-                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${keyUntukAksi}')" title="Hapus" class="bg-white hover:bg-rose-50 text-rose-600 p-1 rounded border border-slate-200 transition">🗑️</button>` : '';
+                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${keyUntukAksi}')" title="Hapus Laporan" class="bg-rose-50 hover:bg-rose-100 text-rose-600 w-8 h-8 rounded-xl border border-rose-200 shadow-sm flex items-center justify-center transition active:scale-95">🗑️</button>` : '';
                     
-                    aksiHtml = `<td class="px-4 py-3.5 text-center no-print border-l border-slate-100">
+                    aksiHtml = `<td class="px-3 py-3.5 no-print border-l border-slate-100">
                         <div class="flex items-center justify-center gap-1.5">
-                            <button onclick="kirimLaporanKeWhatsApp('${keyUntukAksi}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-[11px] px-2.5 py-1 rounded font-bold transition flex items-center gap-1">💬 Kirim WA</button>
-                            <button onclick="ubahStatus('${keyUntukAksi}', 'Sedang Diperbaiki')" class="bg-white hover:bg-blue-50 text-blue-600 border border-slate-200 text-[11px] px-2.5 py-1 rounded transition">Perbaiki</button>
-                            <button onclick="ubahStatus('${keyUntukAksi}', 'Selesai')" class="bg-white hover:bg-emerald-50 text-emerald-600 border border-slate-200 text-[11px] px-2.5 py-1 rounded transition">Selesai</button>
+                            <button onclick="kirimLaporanKeWhatsApp('${keyUntukAksi}')" title="Kirim Laporan ke WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 w-8 h-8 rounded-xl shadow-sm flex items-center justify-center transition active:scale-95">💬</button>
+                            <button onclick="ubahStatus('${keyUntukAksi}', 'Sedang Diperbaiki')" title="Proses Perbaikan" class="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 w-8 h-8 rounded-xl shadow-sm flex items-center justify-center transition active:scale-95">🛠️</button>
+                            <button onclick="ubahStatus('${keyUntukAksi}', 'Selesai')" title="Selesai / Normal" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 w-8 h-8 rounded-xl shadow-sm flex items-center justify-center transition active:scale-95">✅</button>
                             ${btnHapus}
                         </div>
                     </td>`;
                 } else if(currentUserObj.role === 'staff') {
-                    // Tombol kirim WA tetap muncul untuk staff agar bisa langsung koordinasi secara cepat
-                    aksiHtml = `<td class="px-4 py-3.5 text-center no-print border-l border-slate-100">
-                        <button onclick="kirimLaporanKeWhatsApp('${keyUntukAksi}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-[11px] px-3 py-1.5 rounded font-bold transition flex items-center justify-center gap-1 mx-auto">💬 Kirim WA</button>
+                    aksiHtml = `<td class="px-3 py-3.5 no-print border-l border-slate-100">
+                        <div class="flex items-center justify-center">
+                            <button onclick="kirimLaporanKeWhatsApp('${keyUntukAksi}')" title="Kirim Laporan ke WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 w-8 h-8 rounded-xl shadow-sm flex items-center justify-center transition active:scale-95">💬</button>
+                        </div>
                     </td>`;
                 }
 
@@ -836,7 +832,6 @@
         }
 
         function renderPanelSettingMaster() {
-            // Memasukkan nilai no WA saat panel setting dibuka
             if(document.getElementById('inputNoWhatsApp')) {
                 document.getElementById('inputNoWhatsApp').value = targetWhatsAppNumber;
             }

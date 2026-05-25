@@ -13,19 +13,14 @@
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
-        /* Scrollbar mini untuk kolom kronologi */
-        .custom-scroll::-webkit-scrollbar { width: 3px; height: 3px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
-
         @media print {
             .no-print { display: none !important; }
             body { background-color: #ffffff !important; color: #000000 !important; }
             .print-area { width: 100% !important; max-width: 100% !important; box-shadow: none !important; border: none !important; display: block !important; padding: 0 !important; }
             .print-panel-header { background-color: transparent !important; border-bottom: 2px solid #1f2937 !important; padding-left: 0 !important; padding-right: 0 !important; padding-top: 0 !important; }
             table { border-collapse: collapse !important; width: 100% !important; }
-            th, td { border-bottom: 1px solid #e2e8f0 !important; padding: 10px 12px !important; font-size: 11px !important; }
-            th { background-color: #f8fafc !important; color: #000000 !important; font-weight: bold !important; }
+            th, td { border: 1px solid #d1d5db !important; padding: 8px 10px !important; font-size: 11px !important; }
+            th { background-color: #f3f4f6 !important; color: #000000 !important; font-weight: bold !important; }
         }
     </style>
 </head>
@@ -127,7 +122,7 @@
                     </div>
                     <div>
                         <label class="block text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1.5">Kronologi & Detail Masalah Gejala Alat</label>
-                        <textarea id="keterangan" rows="3" required placeholder="Tulis gejala kerusakan..." class="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm outline-none bg-slate-50 focus:bg-white transition"></textarea>
+                        <textarea id="keterangan" rows="3" required placeholder="Tulis gejala kerusakan. Contoh: Chiller tidak dingin sejak pagi, suhu mentok di 18 derajat celcius, kompresor bunyi bising..." class="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm outline-none bg-slate-50 focus:bg-white transition"></textarea>
                     </div>
                     <div class="flex justify-end pt-3 border-t border-slate-100">
                         <button type="submit" id="btnSubmitForm" class="w-full md:w-auto bg-gradient-to-r from-cyan-600 to-emerald-600 text-white text-sm font-semibold px-8 py-3 rounded-xl shadow-md transition transform active:scale-95">🚀 Kirim Tiket Laporan ke Teknisi</button>
@@ -135,12 +130,12 @@
                 </form>
             </div>
 
-            <div id="panelTabel" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden print-area">
-                <div class="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200 px-6 py-4.5 flex flex-wrap justify-between items-center gap-4 print-panel-header">
+            <div id="panelTabel" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print-area">
+                <div class="bg-white border-b border-slate-200 px-6 py-4.5 flex flex-wrap justify-between items-center gap-4 print-panel-header">
                     <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><span>📊</span> <span>Status Maintenance & Monitoring Perbaikan</span></h2>
                     <div class="flex items-center space-x-2.5 no-print">
                         <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-4 py-2 rounded-xl font-semibold shadow-sm transition">🖨️ Cetak Rekap Pemeliharaan</button>
-                        <span id="totalRequest" class="bg-white text-slate-700 text-xs font-bold px-3 py-2 rounded-xl border border-slate-200 shadow-sm">Total: 0</span>
+                        <span id="totalRequest" class="bg-slate-100 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl border border-slate-200">Total: 0</span>
                     </div>
                 </div>
 
@@ -162,7 +157,7 @@
                     </div>
                 </div>
 
-                <div class="p-6 pb-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 no-print bg-slate-50/30 border-b border-slate-100">
+                <div class="p-6 pb-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 no-print bg-slate-50/30 border-b border-slate-200">
                     <div>
                         <label class="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">Cari Tiket / Kerusakan</label>
                         <input type="text" id="filterCari" oninput="renderTabel()" placeholder="Ketik kata kunci..." class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-white">
@@ -186,23 +181,25 @@
                     </div>
                 </div>
 
-                <div class="p-6">
-                    <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-sm bg-white w-full">
-                        <table class="min-w-full divide-y divide-slate-200 table-auto">
+                <div class="p-4 bg-white">
+                    <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                        <table class="min-w-full divide-y divide-slate-200 border-collapse">
                             <thead class="bg-slate-50">
-                                <tr class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                    <th class="w-24 px-4 py-4 whitespace-nowrap">Tgl Temuan</th>
-                                    <th class="w-32 px-4 py-4 whitespace-nowrap">Outlet</th>
-                                    <th class="w-36 px-4 py-4 whitespace-nowrap">Pelapor / Area</th>
-                                    <th class="w-24 px-4 py-4 whitespace-nowrap no-print">Dokumentasi</th>
-                                    <th class="w-44 px-4 py-4 whitespace-nowrap">Alat / Kategori</th>
-                                    <th class="px-4 py-4 min-w-[260px]">Kronologi Kendala</th>
-                                    <th class="w-24 px-4 py-4 text-center whitespace-nowrap">Urgensi</th>
-                                    <th class="w-28 px-4 py-4 text-center whitespace-nowrap">Status</th>
-                                    <th id="thAdministrasi" class="w-44 px-4 py-4 text-center whitespace-nowrap no-print">Update Teknisi</th>
+                                <tr class="text-left text-xs font-semibold text-slate-600 uppercase border-b border-slate-200">
+                                    <th class="px-4 py-3 text-center w-12 border-r border-slate-200">No</th>
+                                    <th class="px-4 py-3 border-r border-slate-200">Tgl Temuan</th>
+                                    <th class="px-4 py-3 border-r border-slate-200">Outlet / Cabang</th>
+                                    <th class="px-4 py-3 border-r border-slate-200">Pelapor & Area</th>
+                                    <th class="px-4 py-3 no-print border-r border-slate-200">Dokumentasi</th>
+                                    <th class="px-4 py-3 border-r border-slate-200">Fasilitas / Kategori</th>
+                                    <th class="px-4 py-3 min-w-[240px] border-r border-slate-200">Kronologi Kendala</th>
+                                    <th class="px-4 py-3 text-center border-r border-slate-200">Urgensi</th>
+                                    <th class="px-4 py-3 text-center border-r border-slate-200">Status</th>
+                                    <th id="thAdministrasi" class="px-4 py-3 text-center no-print">Aksi Kendali</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabelData" class="bg-white divide-y divide-slate-200 text-xs text-slate-600"></tbody>
+                            <tbody id="tabelData" class="divide-y divide-slate-100 text-xs text-slate-700 bg-white">
+                                </tbody>
                         </table>
                     </div>
                     <div id="pesanKosong" class="hidden text-center py-16 text-slate-400 font-medium bg-slate-50 mt-3 rounded-xl border border-dashed border-slate-200">Tidak ada pengajuan perbaikan ditemukan.</div>
@@ -234,7 +231,7 @@
                     <div class="bg-white rounded-2xl shadow-sm border p-5">
                         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2.5 mb-3.5 flex items-center gap-1.5"><span>📐</span> Kelola Area / Divisi</h3>
                         <form onsubmit="addMasterItem(event, 'divisi')" class="flex gap-2 mb-3.5">
-                            <input type="text" id="addDivisiInput" required placeholder="Contoh: Kitchen, Bar..." class="w-full px-3 py-1.5 border rounded-xl text-xs outline-none bg-slate-50 focus:bg-white transition">
+                            <input type="text" id="addDivisiInput" required placeholder="Contoh: Kitchen, Bar, Dining..." class="w-full px-3 py-1.5 border rounded-xl text-xs outline-none bg-slate-50 focus:bg-white transition">
                             <button type="submit" class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">+</button>
                         </form>
                         <ul id="listMasterDivisi" class="text-xs space-y-1.5 max-h-44 overflow-y-auto pr-1"></ul>
@@ -242,7 +239,7 @@
                     <div class="bg-white rounded-2xl shadow-sm border p-5">
                         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2.5 mb-3.5 flex items-center gap-1.5"><span>🔌</span> Kelola Kategori Kendala</h3>
                         <form onsubmit="addMasterItem(event, 'kategori')" class="flex gap-2 mb-3.5">
-                            <input type="text" id="addKategoriInput" required placeholder="Contoh: Kelistrikan, Mesin..." class="w-full px-3 py-1.5 border rounded-xl text-xs outline-none bg-slate-50 focus:bg-white transition">
+                            <input type="text" id="addKategoriInput" required placeholder="Contoh: Kelistrikan, Mesin Kopi, Air..." class="w-full px-3 py-1.5 border rounded-xl text-xs outline-none bg-slate-50 focus:bg-white transition">
                             <button type="submit" class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">+</button>
                         </form>
                         <ul id="listMasterKategori" class="text-xs space-y-1.5 max-h-44 overflow-y-auto pr-1"></ul>
@@ -272,15 +269,15 @@
                     <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-1.5"><span>👥</span> Manajemen Akun Pengguna</h3>
                     <form onsubmit="tambahAkunUser(event)" class="bg-slate-50 border border-slate-100 p-5 rounded-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end mb-5">
                         <div>
-                            <label class="block text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-1.5">Username Baru</label>
-                            <input type="text" id="newUsername" required placeholder="Ketik username baru..." class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-white">
+                            <label class="block text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-1.5">Username</label>
+                            <input type="text" id="newUsername" required placeholder="Username..." class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-white">
                         </div>
                         <div>
                             <label class="block text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-1.5">Password</label>
-                            <input type="text" id="newPassword" required placeholder="Ketik password..." class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-white">
+                            <input type="text" id="newPassword" required placeholder="Password..." class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-white">
                         </div>
                         <div>
-                            <label class="block text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-1.5">Role Level Akses</label>
+                            <label class="block text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-1.5">Role Level</label>
                             <select id="newRole" onchange="toggleLockOptionsBasedOnRole()" class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-white">
                                 <option value="staff">Staff Outlet (Hanya Lapor & Lihat)</option>
                                 <option value="approver">Teknisi / Engineering (Ubah Status Kerja)</option>
@@ -288,14 +285,13 @@
                             </select>
                         </div>
                         <div id="boxLockBranch">
-                            <label class="block text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-1.5">Kunci Hak Akses Outlet</label>
+                            <label class="block text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-1.5">Kunci Hak Outlet</label>
                             <select id="newLockBranch" class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-white"></select>
                         </div>
                         <div class="sm:col-span-2 md:col-span-3 flex justify-end">
                             <button type="submit" class="bg-slate-800 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-sm transition">Daftarkan User Baru</button>
                         </div>
                     </form>
-                    
                     <div class="overflow-x-auto border border-slate-100 rounded-xl">
                         <table class="min-w-full divide-y text-xs text-slate-600">
                             <thead class="bg-slate-50 font-bold text-slate-500 uppercase tracking-wider">
@@ -319,6 +315,7 @@
         const FIREBASE_BASE_URL = 'https://e-maintenance-fnb-default-rtdb.asia-southeast1.firebasedatabase.app';
         const KEY_SESSION = 'maintenance_session_v1';
 
+        // Data Arrays dengan Default Fallback
         let masterBranches = ["Outlet Cipete", "Outlet Bekasi", "Outlet Bogor", "Outlet Bintaro"];
         let masterDivisi = ["Kitchen", "Bar Area", "Dining Room", "Kasir / Depan"];
         let masterKategori = ["Kelistrikan", "Mesin Kopi / Bar", "Chiller / Freezer", "Sipil / Bangunan"];
@@ -356,7 +353,7 @@
                     localStorage.setItem('local_kategori', JSON.stringify(masterKategori));
                 }
             } catch (err) { 
-                console.warn("Menggunakan database lokal:", err);
+                console.warn("Gagal terhubung ke Firebase, menggunakan database lokal:", err);
                 if(localStorage.getItem('local_branches')) masterBranches = JSON.parse(localStorage.getItem('local_branches'));
                 if(localStorage.getItem('local_divisi')) masterDivisi = JSON.parse(localStorage.getItem('local_divisi'));
                 if(localStorage.getItem('local_kategori')) masterKategori = JSON.parse(localStorage.getItem('local_kategori'));
@@ -549,6 +546,7 @@
             });
         }
 
+        // FUNGSI RENDER TABEL YANG DIUBAH MENJADI BERGAYA POS (CLEAN BORDER & STRIPED BACKGROUND)
         function renderTabel() {
             const tabel = document.getElementById('tabelData');
             const thAdmin = document.getElementById('thAdministrasi');
@@ -578,31 +576,31 @@
             
             if(dataTerfilter.length === 0) {
                 document.getElementById('pesanKosong').classList.remove('hidden');
-                if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'w-44 px-4 py-4 text-center whitespace-nowrap no-print';
+                if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'px-4 py-3 text-center no-print';
                 return;
             }
             document.getElementById('pesanKosong').classList.add('hidden');
-            if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'w-44 px-4 py-4 text-center whitespace-nowrap no-print';
+            if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'px-4 py-3 text-center no-print';
 
             dataTerfilter.sort((a, b) => b.id - a.id);
 
-            dataTerfilter.forEach(item => { 
-                let statusTextColor = 'text-amber-600 font-medium';
-                if(item.status === 'Sedang Diperbaiki') statusTextColor = 'text-blue-600 font-medium';
-                if(item.status === 'Selesai') statusTextColor = 'text-emerald-600 font-medium';
+            dataTerfilter.forEach((item, index) => { 
+                let badgeColor = 'text-amber-600 bg-amber-50 border-amber-200';
+                if(item.status === 'Sedang Diperbaiki') badgeColor = 'text-blue-600 bg-blue-50 border-blue-200';
+                if(item.status === 'Selesai') badgeColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
 
-                let urgensiTextColor = 'text-slate-600 font-normal';
-                if(item.urgensi === 'Urgent') urgensiTextColor = 'text-amber-600 font-semibold';
-                if(item.urgensi === 'Critical') urgensiTextColor = 'text-rose-600 font-bold animate-pulse';
+                let urgensiBadge = 'text-slate-600 bg-slate-50 border-slate-200';
+                if(item.urgensi === 'Urgent') urgensiBadge = 'text-amber-700 bg-amber-50 border-amber-300 font-semibold';
+                if(item.urgensi === 'Critical') urgensiBadge = 'text-rose-700 bg-rose-50 border-rose-300 font-bold animate-pulse';
                 
                 let mediaHtml = '<div class="flex flex-wrap gap-1 max-w-[120px]">';
                 if(item.listGambar && item.listGambar.length > 0) {
                     item.listGambar.forEach(imgSrc => {
-                        mediaHtml += `<img src="${imgSrc}" loading="lazy" class="w-7 h-7 object-cover rounded border border-slate-200 cursor-zoom-in hover:opacity-80 transition" onclick="window.open('${imgSrc}')">`;
+                        mediaHtml += `<img src="${imgSrc}" loading="lazy" class="w-8 h-8 object-cover rounded border border-slate-200 cursor-zoom-in hover:scale-105 transition" onclick="window.open('${imgSrc}')">`;
                     });
                 }
                 if(item.videoData) {
-                    mediaHtml += `<button onclick="bukaModalVideo('${item.id}')" title="Putar Video" class="w-7 h-7 text-[10px] bg-slate-800 text-white rounded flex items-center justify-center hover:bg-slate-900 transition">🎬</button>
+                    mediaHtml += `<button onclick="bukaModalVideo('${item.id}')" class="w-8 h-8 text-[10px] bg-slate-800 hover:bg-slate-900 text-white rounded flex items-center justify-center transition">🎬</button>
                     <div id="vidContainer_${item.id}" class="hidden">${item.videoData}</div>`;
                 }
                 mediaHtml += '</div>';
@@ -610,36 +608,38 @@
                 let aksiHtml = '';
                 if(currentUserObj.role === 'admin' || currentUserObj.role === 'approver') {
                     let keyUntukAksi = item.firebaseKey || item.id;
-                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${keyUntukAksi}')" title="Hapus" class="text-rose-600 hover:text-rose-800 p-1 transition text-sm">🗑️</button>` : '';
+                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${keyUntukAksi}')" title="Hapus" class="bg-white hover:bg-rose-50 text-rose-600 p-1 rounded border border-slate-200 transition">🗑️</button>` : '';
                     
-                    aksiHtml = `<td class="px-4 py-3 text-center no-print border-b border-slate-100 align-middle">
+                    aksiHtml = `<td class="px-4 py-3.5 text-center no-print">
                         <div class="flex items-center justify-center gap-1.5">
-                            <button onclick="ubahStatus('${keyUntukAksi}', 'Sedang Diperbaiki')" class="text-blue-600 hover:text-blue-800 font-semibold text-xs transition whitespace-nowrap">Perbaiki</button>
-                            <span class="text-slate-300">|</span>
-                            <button onclick="ubahStatus('${keyUntukAksi}', 'Selesai')" class="text-emerald-600 hover:text-emerald-800 font-semibold text-xs transition whitespace-nowrap">Selesai</button>
-                            ${btnHapus ? `<span class="text-slate-300">|</span>` : ''}
+                            <button onclick="ubahStatus('${keyUntukAksi}', 'Sedang Diperbaiki')" class="bg-white hover:bg-blue-50 text-blue-600 border border-slate-200 text-[11px] px-2.5 py-1 rounded transition">Perbaiki</button>
+                            <button onclick="ubahStatus('${keyUntukAksi}', 'Selesai')" class="bg-white hover:bg-emerald-50 text-emerald-600 border border-slate-200 text-[11px] px-2.5 py-1 rounded transition">Selesai</button>
                             ${btnHapus}
                         </div>
                     </td>`;
                 }
 
-                tabel.innerHTML += `<tr class="hover:bg-slate-50/80 transition duration-150">
-                    <td class="px-4 py-3 border-b border-slate-100 text-slate-400 align-middle whitespace-nowrap">${item.tanggal}</td>
-                    <td class="px-4 py-3 border-b border-slate-100 text-slate-700 font-medium align-middle whitespace-nowrap">${item.branch}</td>
-                    <td class="px-4 py-3 border-b border-slate-100 align-middle">
-                        <div class="text-slate-700 font-medium whitespace-nowrap">${item.pemohon}</div>
-                        <div class="text-[10px] text-slate-400 font-medium">${item.divisi}</div>
+                // Efek Zebra-Striping & Garis Vertikal Tipis Persis Gaya POS Esensi Solusi Buana (ESB)
+                let rowBgColor = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/60';
+
+                tabel.innerHTML += `<tr class="${rowBgColor} hover:bg-slate-100/70 transition duration-100 border-b border-slate-200">
+                    <td class="px-4 py-3.5 text-center font-medium text-slate-400 border-r border-slate-200 w-12">${index + 1}</td>
+                    <td class="px-4 py-3.5 text-slate-500 font-medium border-r border-slate-200 whitespace-nowrap">${item.tanggal}</td>
+                    <td class="px-4 py-3.5 font-bold text-slate-800 border-r border-slate-200 whitespace-nowrap">${item.branch}</td>
+                    <td class="px-4 py-3.5 border-r border-slate-200">
+                        <div class="font-semibold text-slate-800">${item.pemohon}</div>
+                        <div class="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">${item.divisi}</div>
                     </td>
-                    <td class="px-4 py-3 no-print border-b border-slate-100 align-middle">${mediaHtml}</td>
-                    <td class="px-4 py-3 border-b border-slate-100 align-middle">
-                        <div class="text-slate-800 font-medium mb-0.5">${item.namaBarang}</div>
-                        <div class="text-[10px] text-slate-400 tracking-wide font-medium uppercase">${item.kategori}</div>
+                    <td class="px-4 py-3.5 no-print border-r border-slate-200">${mediaHtml}</td>
+                    <td class="px-4 py-3.5 border-r border-slate-200">
+                        <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">${item.kategori}</div>
+                        <div class="font-semibold text-slate-900">${item.namaBarang}</div>
                     </td>
-                    <td class="px-4 py-3 border-b border-slate-100 align-middle">
-                        <div class="text-xs text-slate-500 leading-relaxed max-h-12 overflow-y-auto pr-1 custom-scroll max-w-xs">${item.keterangan}</div>
+                    <td class="px-4 py-3.5 border-r border-slate-200">
+                        <div class="text-xs text-slate-600 leading-relaxed bg-white border border-slate-200 p-2 rounded-lg max-h-24 overflow-y-auto max-w-sm">${item.keterangan}</div>
                     </td>
-                    <td class="px-4 py-3 text-center border-b border-slate-100 align-middle whitespace-nowrap"><span class="${urgensiTextColor} text-xs">${item.urgensi}</span></td>
-                    <td class="px-4 py-3 text-center border-b border-slate-100 align-middle whitespace-nowrap"><span class="${statusTextColor} text-xs">${item.status}</span></td>
+                    <td class="px-4 py-3.5 text-center whitespace-nowrap border-r border-slate-200"><span class="px-2 py-0.5 text-[10px] rounded border ${urgensiBadge}">${item.urgensi}</span></td>
+                    <td class="px-4 py-3.5 text-center whitespace-nowrap border-r border-slate-200"><span class="px-2.5 py-0.5 border text-[11px] font-semibold rounded ${badgeColor}">${item.status}</span></td>
                     ${currentUserObj.role !== 'staff' ? aksiHtml : ''}
                 </tr>`;
             });

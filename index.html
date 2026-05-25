@@ -291,7 +291,7 @@
     </div>
 
     <script>
-        // URL Realtime Database Firebase Baru untuk Maintenance 
+        // Masukkan URL Realtime Database Firebase Baru kamu di sini
         const FIREBASE_BASE_URL = 'https://e-maintenance-fnb-default-rtdb.asia-southeast1.firebasedatabase.app';
         const KEY_SESSION = 'maintenance_session_v1';
 
@@ -312,15 +312,54 @@
             try {
                 const res = await fetch(`${FIREBASE_BASE_URL}/.json`);
                 const db = await res.json();
+                
+                // JIKA DATABASE COCOK / SUDAH ADA DATA
                 if (db) {
-                    masterBranches = Object.values(db.branches || {});
-                    masterDivisi = Object.values(db.divisi || {});
-                    masterKategori = Object.values(db.kategori || {});
+                    masterBranches = db.branches ? Object.values(db.branches) : [];
+                    masterDivisi = db.divisi ? Object.values(db.divisi) : [];
+                    masterKategori = db.kategori ? Object.values(db.kategori) : [];
                     appLogo = db.logo || '';
                     daftarPermintaan = db.requests ? Object.keys(db.requests).map(key => ({ firebaseKey: key, ...db.requests[key] })) : [];
                     masterUsers = db.users ? Object.keys(db.users).map(key => ({ firebaseKey: key, ...db.users[key] })) : [];
                 }
-            } catch (err) { console.error("Gagal sinkronisasi Firebase:", err); }
+
+                // AKTIVASI AKUN PANCINGAN: Jika database baru dan belum ada user sama sekali
+                if (masterUsers.length === 0) {
+                    const defaultAdmin = {
+                        username: "admin",
+                        password: "admin", // <--- Kamu bisa ganti password ini sesuka hati
+                        role: "admin",
+                        lockBranch: "ALL"
+                    };
+                    
+                    // Daftarkan otomatis ke Firebase
+                    const setupRes = await fetch(`${FIREBASE_BASE_URL}/users.json`, { 
+                        method: 'POST', 
+                        body: JSON.stringify(defaultAdmin) 
+                    });
+                    const setupData = await setupRes.json();
+                    
+                    // Masukkan ke data lokal biar bisa langsung login
+                    defaultAdmin.firebaseKey = setupData.name;
+                    masterUsers.push(defaultAdmin);
+
+                    // Buatkan juga data master default dasar agar web tidak kosong melompong
+                    if (masterBranches.length === 0) {
+                        masterBranches = ["Outlet Cipete", "Outlet Bekasi", "Outlet Bogor", "Outlet Bintaro"];
+                        await updateFirebaseNode('branches', masterBranches);
+                    }
+                    if (masterDivisi.length === 0) {
+                        masterDivisi = ["Kitchen", "Bar Area", "Dining Room", "Kasir / Depan"];
+                        await updateFirebaseNode('divisi', masterDivisi);
+                    }
+                    if (masterKategori.length === 0) {
+                        masterKategori = ["Kelistrikan", "Mesin Kopi / Bar", "Chiller / Freezer", "Sipil / Bangunan"];
+                        await updateFirebaseNode('kategori', masterKategori);
+                    }
+                }
+            } catch (err) { 
+                console.error("Gagal sinkronisasi Firebase:", err); 
+            }
         }
 
         async function updateFirebaseNode(path, data) {
@@ -372,7 +411,7 @@
             masterBranches.forEach(b => sBranchForm.innerHTML += `<option value="${b}">${b}</option>`);
             sBranchFilter.innerHTML = '<option value="ALL">-- Semua Outlet --</option>';
             masterBranches.forEach(b => sBranchFilter.innerHTML += `<option value="${b}">${b}</option>`);
-            sDivisiForm.innerHTML = '<option value="">-- Pilih Area Area --</option>';
+            sDivisiForm.innerHTML = '<option value="">-- Pilih Area --</option>';
             masterDivisi.forEach(d => sDivisiForm.innerHTML += `<option value="${d}">${d}</option>`);
             sKategoriForm.innerHTML = '<option value="">-- Pilih Kategori Kendala --</option>';
             masterKategori.forEach(k => sKategoriForm.innerHTML += `<option value="${k}">${k}</option>`);
@@ -409,7 +448,6 @@
             btnForm.classList.add('hidden'); btnTabel.classList.add('hidden'); btnSetting.classList.add('hidden');
             wrapperFilterBranch.classList.remove('hidden'); selectBranchForm.disabled = false;
 
-            // Alokasi Otomatis menu berdasarkan hak Role
             if (currentUserObj.role === 'staff') {
                 btnForm.classList.remove('hidden');
                 btnTabel.classList.remove('hidden');
@@ -525,7 +563,6 @@
             document.getElementById('pesanKosong').classList.add('hidden');
             thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'w-40 px-4 py-3.5 text-center no-print';
 
-            // Mengurutkan tiket perbaikan berdasarkan waktu terbaru pelaporan
             dataTerfilter.sort((a, b) => b.id - a.id);
 
             dataTerfilter.forEach(item => { 
@@ -750,7 +787,7 @@
         async function resetLogoSistem() {
             if(confirm('Reset logo?')) {
                 appLogo = ''; await fetch(`${FIREBASE_BASE_URL}/logo.json`, { method: 'DELETE' });
-                applyLogoSistem();
+                document.getElementById('inputLogoSistem').value = ''; applyLogoSistem();
             }
         }
     </script>

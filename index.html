@@ -183,18 +183,18 @@
 
                 <div class="p-6">
                     <div class="overflow-x-auto border border-slate-100 rounded-xl shadow-inner bg-slate-50/30">
-                        <table class="min-w-full divide-y divide-slate-200 table-fixed">
+                        <table class="min-w-full divide-y divide-slate-200 table-auto">
                             <thead class="bg-slate-50">
                                 <tr class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                    <th class="w-24 px-4 py-3.5">Tgl Temuan</th>
-                                    <th class="w-28 px-4 py-3.5">Outlet</th>
-                                    <th class="w-36 px-4 py-3.5">Pelapor / Area</th>
-                                    <th class="w-28 px-4 py-3.5 no-print">Dokumentasi</th>
-                                    <th class="w-48 px-4 py-3.5">Alat / Kategori</th>
-                                    <th class="w-56 px-4 py-3.5">Kronologi Kendala</th>
-                                    <th class="w-24 px-3 py-3.5 text-center">Urgensi</th>
-                                    <th class="w-32 px-4 py-3.5 text-center">Status</th>
-                                    <th id="thAdministrasi" class="w-40 px-4 py-3.5 text-center no-print">Update Teknisi</th>
+                                    <th class="min-w-[90px] px-4 py-3.5">Tgl Temuan</th>
+                                    <th class="min-w-[110px] px-4 py-3.5">Outlet</th>
+                                    <th class="min-w-[140px] px-4 py-3.5">Pelapor / Area</th>
+                                    <th class="min-w-[110px] px-4 py-3.5 no-print">Dokumentasi</th>
+                                    <th class="min-w-[180px] px-4 py-3.5">Alat / Kategori</th>
+                                    <th class="min-w-[240px] px-4 py-3.5">Kronologi Kendala</th>
+                                    <th class="min-w-[90px] px-3 py-3.5 text-center">Urgensi</th>
+                                    <th class="min-w-[120px] px-4 py-3.5 text-center">Status</th>
+                                    <th id="thAdministrasi" class="min-w-[180px] px-4 py-3.5 text-center no-print">Update Teknisi</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelData" class="bg-white divide-y divide-slate-100 text-xs text-slate-600"></tbody>
@@ -235,7 +235,7 @@
                         <ul id="listMasterDivisi" class="text-xs space-y-1.5 max-h-44 overflow-y-auto pr-1"></ul>
                     </div>
                     <div class="bg-white rounded-2xl shadow-sm border p-5">
-                        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2.5 mb-3.5 flex items-center gap-1.5"><span>🔌</span> Kelola Kategori Kendala</h3>
+                        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2.5 mb-3.5 flex items-center gap-1.5"><span>📐</span> Kelola Kategori Kendala</h3>
                         <form onsubmit="addMasterItem(event, 'kategori')" class="flex gap-2 mb-3.5">
                             <input type="text" id="addKategoriInput" required placeholder="Contoh: Kelistrikan, Mesin Kopi, Air..." class="w-full px-3 py-1.5 border rounded-xl text-xs outline-none bg-slate-50 focus:bg-white transition">
                             <button type="submit" class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">+</button>
@@ -247,7 +247,7 @@
                 <div class="bg-white rounded-2xl shadow-sm border p-6">
                     <h3 class="text-sm font-bold text-rose-600 uppercase tracking-wider mb-4 flex items-center gap-1.5"><span>🗑️</span> Recycle Bin (Tiket Terhapus)</h3>
                     <div class="overflow-x-auto border border-slate-100 rounded-xl">
-                        <table class="min-w-full divide-y text-xs text-slate-600">
+                        <table class="min-w-full divide-y text-xs text-slate-600 table-auto">
                             <thead class="bg-slate-50 font-bold text-slate-500 uppercase tracking-wider">
                                 <tr>
                                     <th class="px-4 py-3 text-left">Tgl Temuan</th>
@@ -309,6 +309,38 @@
         </div>
     </div>
 
+    <div id="modalEditKolom" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 no-print">
+        <div class="bg-white rounded-2xl shadow-xl border w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-sm font-bold uppercase tracking-wider">✏️ Edit Informasi Tiket</h3>
+                <button onclick="tutupModalEdit()" class="text-white hover:text-slate-300 font-bold text-base">✕</button>
+            </div>
+            <form id="formEditKolom" onsubmit="simpanPerubahanKolom(event)" class="p-6 space-y-4">
+                <input type="hidden" id="editKeyId">
+                <div>
+                    <label class="block text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1.5">Nama Barang / Fasilitas</label>
+                    <input type="text" id="editNamaBarang" required class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-slate-50 focus:bg-white transition">
+                </div>
+                <div>
+                    <label class="block text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1.5">Tingkat Urgensi</label>
+                    <select id="editUrgensi" required class="w-full px-3 py-2 border rounded-xl text-xs bg-slate-50 focus:bg-white outline-none transition font-semibold">
+                        <option value="Normal">🟢 Normal</option>
+                        <option value="Urgent">🟡 Urgent</option>
+                        <option value="Critical">🔴 Critical</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1.5">Kronologi Kendala</label>
+                    <textarea id="editKeterangan" rows="4" required class="w-full px-3 py-2 border rounded-xl text-xs outline-none bg-slate-50 focus:bg-white transition"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t">
+                    <button type="button" onclick="tutupModalEdit()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-md">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const FIREBASE_BASE_URL = 'https://e-maintenance-fnb-default-rtdb.asia-southeast1.firebasedatabase.app';
         const KEY_SESSION = 'maintenance_session_v1';
@@ -346,19 +378,19 @@
                     daftarTrash = db.trash ? Object.keys(db.trash).map(key => ({ firebaseKey: key, ...db.trash[key] })) : [];
                     if (db.users) masterUsers = Object.keys(db.users).map(key => ({ firebaseKey: key, ...db.users[key] }));
 
-                    // Simpan backup lokal dari Firebase
                     localStorage.setItem('local_branches', JSON.stringify(masterBranches));
                     localStorage.setItem('local_divisi', JSON.stringify(masterDivisi));
                     localStorage.setItem('local_kategori', JSON.stringify(masterKategori));
+                    localStorage.setItem('local_backup_requests', JSON.stringify(daftarPermintaan));
+                    localStorage.setItem('local_backup_trash', JSON.stringify(daftarTrash));
                 }
             } catch (err) { 
                 console.warn("Gagal terhubung ke Firebase, menggunakan database lokal:", err);
                 if(localStorage.getItem('local_branches')) masterBranches = JSON.parse(localStorage.getItem('local_branches'));
                 if(localStorage.getItem('local_divisi')) masterDivisi = JSON.parse(localStorage.getItem('local_divisi'));
                 if(localStorage.getItem('local_kategori')) masterKategori = JSON.parse(localStorage.getItem('local_kategori'));
-                
-                const dataLokal = localStorage.getItem('local_backup_requests');
-                if (dataLokal) daftarPermintaan = JSON.parse(dataLokal);
+                if(localStorage.getItem('local_backup_requests')) daftarPermintaan = JSON.parse(localStorage.getItem('local_backup_requests'));
+                if(localStorage.getItem('local_backup_trash')) daftarTrash = JSON.parse(localStorage.getItem('local_backup_trash'));
             }
         }
 
@@ -367,6 +399,7 @@
                 await fetch(`${FIREBASE_BASE_URL}/${path}.json`, { method: 'PUT', body: JSON.stringify(data) });
             } catch(e) {
                 if (path === 'requests') localStorage.setItem('local_backup_requests', JSON.stringify(data));
+                if (path === 'trash') localStorage.setItem('local_backup_trash', JSON.stringify(data));
             }
         }
 
@@ -574,11 +607,11 @@
             
             if(dataTerfilter.length === 0) {
                 document.getElementById('pesanKosong').classList.remove('hidden');
-                if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'w-40 px-4 py-3.5 text-center no-print';
+                if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'min-w-[180px] px-4 py-3.5 text-center no-print bg-slate-50';
                 return;
             }
             document.getElementById('pesanKosong').classList.add('hidden');
-            if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'w-40 px-4 py-3.5 text-center no-print';
+            if (thAdmin) thAdmin.className = currentUserObj.role === 'staff' ? 'hidden' : 'min-w-[180px] px-4 py-3.5 text-center no-print bg-slate-50';
 
             dataTerfilter.sort((a, b) => b.id - a.id);
 
@@ -591,7 +624,7 @@
                 if(item.urgensi === 'Urgent') urgensiBadge = 'text-amber-700 bg-amber-100 font-bold';
                 if(item.urgensi === 'Critical') urgensiBadge = 'text-rose-700 bg-rose-100 font-black animate-pulse';
                 
-                let mediaHtml = '<div class="flex flex-wrap gap-1 max-w-[120px]">';
+                let mediaHtml = '<div class="flex flex-wrap gap-1 max-w-[100px]">';
                 if(item.listGambar && item.listGambar.length > 0) {
                     item.listGambar.forEach(imgSrc => {
                         mediaHtml += `<img src="${imgSrc}" loading="lazy" class="w-8 h-8 object-cover rounded border cursor-zoom-in" onclick="window.open('${imgSrc}')">`;
@@ -606,13 +639,17 @@
                 let aksiHtml = '';
                 if(currentUserObj.role === 'admin' || currentUserObj.role === 'approver') {
                     let keyUntukAksi = item.firebaseKey || item.id;
-                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${keyUntukAksi}')" title="Hapus ke Sampah" class="bg-rose-50 text-rose-700 p-1 rounded border border-rose-200">🗑️</button>` : '';
+                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${keyUntukAksi}')" title="Hapus ke Sampah" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2 py-1 rounded border border-rose-200 font-semibold text-[11px]">🗑️ Hapus</button>` : '';
+                    let btnEdit = currentUserObj.role === 'admin' ? `<button onclick="bukaModalEdit('${keyUntukAksi}')" title="Edit Data Kolom" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded border border-slate-300 font-semibold text-[11px]">✏️ Edit</button>` : '';
                     
-                    aksiHtml = `<td class="px-3 py-2 text-center no-print border-b border-slate-100">
-                        <div class="flex flex-col gap-1 items-center justify-center">
-                            <div class="flex gap-1">
-                                <button onclick="ubahStatus('${keyUntukAksi}', 'Sedang Diperbaiki')" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-semibold">Perbaiki</button>
-                                <button onclick="ubahStatus('${keyUntukAksi}', 'Selesai')" class="bg-emerald-600 text-white text-[10px] px-2 py-1 rounded font-semibold">Selesai</button>
+                    aksiHtml = `<td class="px-4 py-3.5 text-center no-print border-b border-slate-100">
+                        <div class="flex flex-col gap-1.5 items-center justify-center">
+                            <div class="flex gap-1.5 flex-wrap justify-center">
+                                <button onclick="ubahStatus('${keyUntukAksi}', 'Sedang Diperbaiki')" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2 py-1 rounded font-semibold transition">Perbaiki</button>
+                                <button onclick="ubahStatus('${keyUntukAksi}', 'Selesai')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-2 py-1 rounded font-semibold transition">Selesai</button>
+                            </div>
+                            <div class="flex gap-1.5 justify-center mt-0.5">
+                                ${btnEdit}
                                 ${btnHapus}
                             </div>
                         </div>
@@ -620,22 +657,68 @@
                 }
 
                 tabel.innerHTML += `<tr>
-                    <td class="px-4 py-3.5 border-b border-slate-100 text-slate-500">${item.tanggal}</td>
-                    <td class="px-4 py-3.5 font-bold border-b border-slate-100 text-slate-800">${item.branch}</td>
-                    <td class="px-4 py-3.5 border-b border-slate-100"><div class="font-bold text-slate-800">${item.pemohon}</div><div class="text-[10px] text-slate-400 font-medium">${item.divisi}</div></td>
+                    <td class="px-4 py-3.5 border-b border-slate-100 text-slate-500 font-medium">${item.tanggal}</td>
+                    <td class="px-4 py-3.5 font-bold border-b border-slate-100 text-slate-800 break-words whitespace-normal">${item.branch}</td>
+                    <td class="px-4 py-3.5 border-b border-slate-100 break-words whitespace-normal"><div class="font-bold text-slate-800">${item.pemohon}</div><div class="text-[10px] text-slate-400 font-medium">${item.divisi}</div></td>
                     <td class="px-4 py-3.5 no-print border-b border-slate-100">${mediaHtml}</td>
-                    <td class="px-4 py-3.5 border-b border-slate-100">
+                    <td class="px-4 py-3.5 border-b border-slate-100 break-words whitespace-normal">
                         <div class="text-[9px] bg-slate-100 border border-slate-200 text-slate-600 font-extrabold px-1.5 py-0.5 rounded w-max mb-1">${item.kategori}</div>
                         <div class="font-semibold text-slate-900 text-xs">${item.namaBarang}</div>
                     </td>
-                    <td class="px-4 py-3.5 border-b border-slate-100">
-                        <div class="text-xs text-slate-600 leading-relaxed bg-slate-50 border p-2 rounded-xl max-h-20 overflow-y-auto">${item.keterangan}</div>
+                    <td class="px-4 py-3.5 border-b border-slate-100 break-words whitespace-normal">
+                        <div class="text-xs text-slate-600 leading-relaxed bg-slate-50 border p-2.5 rounded-xl max-h-24 overflow-y-auto break-all">${item.keterangan}</div>
                     </td>
                     <td class="px-3 py-3.5 text-center border-b border-slate-100"><span class="px-2 py-0.5 text-[10px] rounded ${urgensiBadge}">${item.urgensi}</span></td>
                     <td class="px-4 py-3.5 text-center border-b border-slate-100"><span class="px-2 py-1 border text-[11px] font-bold rounded-full ${badgeColor}">${item.status}</span></td>
                     ${currentUserObj.role !== 'staff' ? aksiHtml : ''}
                 </tr>`;
             });
+        }
+
+        // Fungsi Buka Modal Edit Kolom
+        function bukaModalEdit(keyId) {
+            const item = daftarPermintaan.find(u => (u.firebaseKey === keyId || u.id == keyId));
+            if(!item) return;
+
+            document.getElementById('editKeyId').value = keyId;
+            document.getElementById('editNamaBarang').value = item.namaBarang;
+            document.getElementById('editUrgensi').value = item.urgensi;
+            document.getElementById('editKeterangan').value = item.keterangan;
+
+            document.getElementById('modalEditKolom').classList.remove('hidden');
+        }
+
+        function tutupModalEdit() {
+            document.getElementById('modalEditKolom').classList.add('hidden');
+            document.getElementById('formEditKolom').reset();
+        }
+
+        // Fungsi Simpan Perubahan Edit Kolom
+        async function simpanPerubahanKolom(event) {
+            event.preventDefault();
+            const keyId = document.getElementById('editKeyId').value;
+            const namaBarangBaru = document.getElementById('editNamaBarang').value.trim();
+            const urgensiBaru = document.getElementById('editUrgensi').value;
+            const keteranganBaru = document.getElementById('editKeterangan').value.trim();
+
+            const idx = daftarPermintaan.findIndex(u => (u.firebaseKey === keyId || u.id == keyId));
+            if(idx !== -1) {
+                daftarPermintaan[idx].namaBarang = namaBarangBaru;
+                daftarPermintaan[idx].urgensi = urgensiBaru;
+                daftarPermintaan[idx].keterangan = keteranganBaru;
+                
+                try {
+                    await fetch(`${FIREBASE_BASE_URL}/requests/${keyId}.json`, { 
+                        method: 'PATCH', 
+                        body: JSON.stringify({ namaBarang: namaBarangBaru, urgensi: urgensiBaru, keterangan: keteranganBaru }) 
+                    });
+                } catch(e) {
+                    localStorage.setItem('local_backup_requests', JSON.stringify(daftarPermintaan));
+                }
+                tutupModalEdit();
+                renderTabel();
+                alert('Data kolom perbaikan berhasil diperbarui!');
+            }
         }
 
         function convertFileToBase64(file) {
@@ -749,11 +832,15 @@
                         await fetch(`${FIREBASE_BASE_URL}/requests/${keyId}.json`, { method: 'DELETE' });
                     } catch(e) {
                         daftarTrash.push(cleanData);
-                        daftarPermintaan = daftarPermintaan.filter(item => (item.firebaseKey !== keyId && item.id != keyId));
-                        localStorage.setItem('local_backup_requests', JSON.stringify(daftarPermintaan));
+                        localStorage.setItem('local_backup_trash', JSON.stringify(daftarTrash));
                     }
-                    await muatDataDariFirebase(); 
+                    
+                    // Langsung hapus dari array lokal agar visual langsung ter-update realtime
+                    daftarPermintaan = daftarPermintaan.filter(item => (item.firebaseKey !== keyId && item.id != keyId));
+                    localStorage.setItem('local_backup_requests', JSON.stringify(daftarPermintaan));
+                    
                     renderTabel();
+                    alert('Tiket berhasil dibuang ke Recycle Bin!');
                 }
             }
         }
@@ -815,11 +902,11 @@
                     <td class="px-4 py-2 border-b text-slate-500">${item.tanggal}</td>
                     <td class="px-4 py-2 border-b font-bold text-slate-700">${item.branch}</td>
                     <td class="px-4 py-2 border-b"><div><b>${item.pemohon}</b></div><div class="text-[11px] text-slate-800">${item.namaBarang}</div></td>
-                    <td class="px-4 py-2 border-b"><div><span class="bg-slate-100 px-1 rounded text-[10px] font-bold">${item.kategori}</span></div><div class="text-slate-400 text-[10px] truncate max-w-[15px]">${item.keterangan}</div></td>
+                    <td class="px-4 py-2 border-b"><div><span class="bg-slate-100 px-1 rounded text-[10px] font-bold">${item.kategori}</span></div><div class="text-slate-400 text-[10px] truncate max-w-[150px]">${item.keterangan}</div></td>
                     <td class="px-4 py-2 border-b text-center">
                         <div class="flex gap-1.5 justify-center">
-                            <button onclick="restoreTiket('${keyTrash}')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded text-[11px] font-medium">🔄 Restore</button>
-                            <button onclick="hapusPermanenTiket('${keyTrash}')" class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-1 rounded text-[11px] font-medium">❌ Hapus Permanen</button>
+                            <button onclick="restoreTiket('${keyTrash}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-1 rounded text-[11px] font-medium transition">🔄 Restore</button>
+                            <button onclick="hapusPermanenTiket('${keyTrash}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-2 py-1 rounded text-[11px] font-medium transition">❌ Hapus Permanen</button>
                         </div>
                     </td>
                 </tr>`;
@@ -861,10 +948,14 @@
                     await fetch(`${FIREBASE_BASE_URL}/trash/${keyId}.json`, { method: 'DELETE' });
                 } catch(e) {
                     daftarPermintaan.push(cleanData);
+                    localStorage.setItem('local_backup_requests', JSON.stringify(daftarPermintaan));
+                    
                     daftarTrash = daftarTrash.filter(item => (item.firebaseKey !== keyId && item.id != keyId));
+                    localStorage.setItem('local_backup_trash', JSON.stringify(daftarTrash));
                 }
                 alert('Tiket berhasil dipulihkan kembali ke monitoring!');
-                await muatDataDariFirebase(); renderPanelSettingMaster();
+                await muatDataDariFirebase(); 
+                renderPanelSettingMaster();
             }
         }
 
@@ -874,8 +965,10 @@
                     await fetch(`${FIREBASE_BASE_URL}/trash/${keyId}.json`, { method: 'DELETE' });
                 } catch(e) {
                     daftarTrash = daftarTrash.filter(item => (item.firebaseKey !== keyId && item.id != keyId));
+                    localStorage.setItem('local_backup_trash', JSON.stringify(daftarTrash));
                 }
-                await muatDataDariFirebase(); renderPanelSettingMaster();
+                await muatDataDariFirebase(); 
+                renderPanelSettingMaster();
             }
         }
 

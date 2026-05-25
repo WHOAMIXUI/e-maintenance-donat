@@ -64,9 +64,9 @@
 
         <div class="container mx-auto px-4 max-w-6xl mb-16">
             <div id="panelNav" class="flex p-1.5 bg-slate-200/70 backdrop-blur border border-slate-300/30 rounded-xl space-x-1.5 mb-8 max-w-2xl mx-auto no-print">
-                <button id="btnPanelForm" onclick="switchPanel('form')" class="hidden w-full py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition duration-200">📝 Laporkan Kerusakan</button>
-                <button id="btnPanelTabel" onclick="switchPanel('tabel')" class="hidden w-full py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition duration-200">📊 Progress Perbaikan</button>
-                <button id="btnPanelSetting" onclick="switchPanel('setting')" class="hidden w-full py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition duration-200">⚙️ Pengaturan</button>
+                <button id="btnPanelForm" onclick="switchPanel('form')" class="w-full py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition duration-200">📝 Laporkan Kerusakan</button>
+                <button id="btnPanelTabel" onclick="switchPanel('tabel')" class="w-full py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition duration-200">📊 Progress Perbaikan</button>
+                <button id="btnPanelSetting" onclick="switchPanel('setting')" class="w-full py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition duration-200">⚙️ Pengaturan</button>
             </div>
 
             <div id="panelForm" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden no-print">
@@ -313,10 +313,14 @@
         const FIREBASE_BASE_URL = 'https://e-maintenance-fnb-default-rtdb.asia-southeast1.firebasedatabase.app';
         const KEY_SESSION = 'maintenance_session_v1';
 
-        let masterBranches = [];
-        let masterDivisi = [];
-        let masterKategori = [];
-        let masterUsers = [];
+        // Data Arrays dengan Default Fallback jika Firebase baru dibuat atau kosong
+        let masterBranches = ["Outlet Cipete", "Outlet Bekasi", "Outlet Bogor", "Outlet Bintaro"];
+        let masterDivisi = ["Kitchen", "Bar Area", "Dining Room", "Kasir / Depan"];
+        let masterKategori = ["Kelistrikan", "Mesin Kopi / Bar", "Chiller / Freezer", "Sipil / Bangunan"];
+        let masterUsers = [
+            { username: "admin", password: "admin", role: "admin", lockBranch: "ALL", firebaseKey: "default_admin" },
+            { username: "staff", password: "staff", role: "staff", lockBranch: "Outlet Cipete", firebaseKey: "default_staff" }
+        ];
         let daftarPermintaan = [];
         let daftarTrash = [];
         let appLogo = '';
@@ -330,55 +334,32 @@
         async function muatDataDariFirebase() {
             try {
                 const res = await fetch(`${FIREBASE_BASE_URL}/.json`);
+                if (!res.ok) throw new Error("Firebase error");
                 const db = await res.json();
                 
                 if (db) {
-                    masterBranches = db.branches ? Object.values(db.branches) : [];
-                    masterDivisi = db.divisi ? Object.values(db.divisi) : [];
-                    masterKategori = db.kategori ? Object.values(db.kategori) : [];
+                    if (db.branches) masterBranches = Object.values(db.branches);
+                    if (db.divisi) masterDivisi = Object.values(db.divisi);
+                    if (db.kategori) masterKategori = Object.values(db.kategori);
                     appLogo = db.logo || '';
                     daftarPermintaan = db.requests ? Object.keys(db.requests).map(key => ({ firebaseKey: key, ...db.requests[key] })) : [];
-                    masterUsers = db.users ? Object.keys(db.users).map(key => ({ firebaseKey: key, ...db.users[key] })) : [];
                     daftarTrash = db.trash ? Object.keys(db.trash).map(key => ({ firebaseKey: key, ...db.trash[key] })) : [];
-                }
-
-                if (masterUsers.length === 0) {
-                    const defaultAdmin = {
-                        username: "admin",
-                        password: "admin", 
-                        role: "admin",
-                        lockBranch: "ALL"
-                    };
-                    
-                    const setupRes = await fetch(`${FIREBASE_BASE_URL}/users.json`, { 
-                        method: 'POST', 
-                        body: JSON.stringify(defaultAdmin) 
-                    });
-                    const setupData = await setupRes.json();
-                    
-                    defaultAdmin.firebaseKey = setupData.name;
-                    masterUsers.push(defaultAdmin);
-
-                    if (masterBranches.length === 0) {
-                        masterBranches = ["Outlet Cipete", "Outlet Bekasi", "Outlet Bogor", "Outlet Bintaro"];
-                        await updateFirebaseNode('branches', masterBranches);
-                    }
-                    if (masterDivisi.length === 0) {
-                        masterDivisi = ["Kitchen", "Bar Area", "Dining Room", "Kasir / Depan"];
-                        await updateFirebaseNode('divisi', masterDivisi);
-                    }
-                    if (masterKategori.length === 0) {
-                        masterKategori = ["Kelistrikan", "Mesin Kopi / Bar", "Chiller / Freezer", "Sipil / Bangunan"];
-                        await updateFirebaseNode('kategori', masterKategori);
-                    }
+                    if (db.users) masterUsers = Object.keys(db.users).map(key => ({ firebaseKey: key, ...db.users[key] }));
                 }
             } catch (err) { 
-                console.error("Gagal sinkronisasi Firebase:", err); 
+                console.warn("Gagal terhubung ke Firebase, menggunakan database lokal cadangan (Offline Mode):", err);
+                // Jika offline/error, ambil data contoh dari localStorage agar fitur monitor tetap berfungsi berjalan
+                const dataLokal = localStorage.getItem('local_backup_requests');
+                if (dataLokal) daftarPermintaan = JSON.parse(dataLokal);
             }
         }
 
         async function updateFirebaseNode(path, data) {
-            await fetch(`${FIREBASE_BASE_URL}/${path}.json`, { method: 'PUT', body: JSON.stringify(data) });
+            try {
+                await fetch(`${FIREBASE_BASE_URL}/${path}.json`, { method: 'PUT', body: JSON.stringify(data) });
+            } catch(e) {
+                if (path === 'requests') localStorage.setItem('local_backup_requests', JSON.stringify(data));
+            }
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -426,14 +407,19 @@
 
             sBranchForm.innerHTML = '<option value="">-- Pilih Outlet --</option>';
             masterBranches.forEach(b => sBranchForm.innerHTML += `<option value="${b}">${b}</option>`);
+            
             sBranchFilter.innerHTML = '<option value="ALL">-- Semua Outlet --</option>';
             masterBranches.forEach(b => sBranchFilter.innerHTML += `<option value="${b}">${b}</option>`);
+            
             sDivisiForm.innerHTML = '<option value="">-- Pilih Area --</option>';
             masterDivisi.forEach(d => sDivisiForm.innerHTML += `<option value="${d}">${d}</option>`);
+            
             sKategoriForm.innerHTML = '<option value="">-- Pilih Kategori Kendala --</option>';
             masterKategori.forEach(k => sKategoriForm.innerHTML += `<option value="${k}">${k}</option>`);
+            
             sKategoriFilter.innerHTML = '<option value="ALL">-- Semua Kategori --</option>';
             masterKategori.forEach(k => sKategoriFilter.innerHTML += `<option value="${k}">${k}</option>`);
+            
             sNewUserBranch.innerHTML = '<option value="ALL">Semua Outlet (No Lock)</option>';
             masterBranches.forEach(b => sNewUserBranch.innerHTML += `<option value="${b}">${b}</option>`);
         }
@@ -448,6 +434,7 @@
                 localStorage.setItem(KEY_SESSION, JSON.stringify(currentUserObj));
                 document.getElementById('loginPage').classList.add('hidden');
                 document.getElementById('dashboardPage').classList.remove('hidden');
+                document.getElementById('loginError').classList.add('hidden');
                 aturHakAkses();
             } else { document.getElementById('loginError').classList.remove('hidden'); }
         }
@@ -514,6 +501,8 @@
         function logout() {
             currentUserObj = null;
             localStorage.removeItem(KEY_SESSION);
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
             document.getElementById('loginPage').classList.remove('hidden');
             document.getElementById('dashboardPage').classList.add('hidden');
         }
@@ -534,7 +523,9 @@
             document.getElementById('statProsesCount').innerText = proses;
             document.getElementById('statSetujuiCount').innerText = selesai;
 
-            const ctx = document.getElementById('requestPieChart').getContext('2d');
+            const canvas = document.getElementById('requestPieChart');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
             if (pieChartInstance) { pieChartInstance.destroy(); }
             pieChartInstance = new Chart(ctx, {
                 type: 'pie',
@@ -553,7 +544,7 @@
             tabel.innerHTML = '';
             
             let dataTerfilter = daftarPermintaan;
-            if(currentUserObj.role === 'staff' && currentUserObj.lockBranch && currentUserObj.lockBranch !== 'ALL') {
+            if(currentUserObj && currentUserObj.role === 'staff' && currentUserObj.lockBranch && currentUserObj.lockBranch !== 'ALL') {
                 dataTerfilter = daftarPermintaan.filter(item => item.branch === currentUserObj.lockBranch);
             }
 
@@ -606,13 +597,14 @@
                 
                 let aksiHtml = '';
                 if(currentUserObj.role === 'admin' || currentUserObj.role === 'approver') {
-                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${item.firebaseKey}')" title="Hapus ke Sampah" class="bg-rose-50 text-rose-700 p-1 rounded border border-rose-200">🗑️</button>` : '';
+                    let keyUntukAksi = item.firebaseKey || item.id;
+                    let btnHapus = currentUserObj.role === 'admin' ? `<button onclick="pindahkanKeTrash('${keyUntukAksi}')" title="Hapus ke Sampah" class="bg-rose-50 text-rose-700 p-1 rounded border border-rose-200">🗑️</button>` : '';
                     
                     aksiHtml = `<td class="px-3 py-2 text-center no-print border-b border-slate-100">
                         <div class="flex flex-col gap-1 items-center justify-center">
                             <div class="flex gap-1">
-                                <button onclick="ubahStatus('${item.firebaseKey}', 'Sedang Diperbaiki')" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-semibold">Perbaiki</button>
-                                <button onclick="ubahStatus('${item.firebaseKey}', 'Selesai')" class="bg-emerald-600 text-white text-[10px] px-2 py-1 rounded font-semibold">Selesai</button>
+                                <button onclick="ubahStatus('${keyUntukAksi}', 'Sedang Diperbaiki')" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-semibold">Perbaiki</button>
+                                <button onclick="ubahStatus('${keyUntukAksi}', 'Selesai')" class="bg-emerald-600 text-white text-[10px] px-2 py-1 rounded font-semibold">Selesai</button>
                                 ${btnHapus}
                             </div>
                         </div>
@@ -633,25 +625,25 @@
                     </td>
                     <td class="px-3 py-3.5 text-center border-b border-slate-100"><span class="px-2 py-0.5 text-[10px] rounded ${urgensiBadge}">${item.urgensi}</span></td>
                     <td class="px-4 py-3.5 text-center border-b border-slate-100"><span class="px-2 py-1 border text-[11px] font-bold rounded-full ${badgeColor}">${item.status}</span></td>
-                    ${aksiHtml}
+                    ${currentUserObj.role !== 'staff' ? aksiHtml : ''}
                 </tr>`;
             });
         }
 
         function convertFileToBase64(file) {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
                         let width = img.width, height = img.height;
-                        const MAX_WIDTH = 800;
+                        const MAX_WIDTH = 600; 
                         if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                         canvas.width = width; canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.5));
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
                     };
                     img.src = e.target.result;
                 };
@@ -698,35 +690,66 @@
                 videoData: videoBase64    
             };
 
-            await fetch(`${FIREBASE_BASE_URL}/requests.json`, { method: 'POST', body: JSON.stringify(dataBaru) });
+            try {
+                // Kirim ke Firebase Database
+                const response = await fetch(`${FIREBASE_BASE_URL}/requests.json`, { method: 'POST', body: JSON.stringify(dataBaru) });
+                if(!response.ok) throw new Error("Offline save");
+            } catch(e) {
+                // Save Lokal jika Firebase bermasalah
+                daftarPermintaan.push(dataBaru);
+                localStorage.setItem('local_backup_requests', JSON.stringify(daftarPermintaan));
+            }
+
             document.getElementById('requestForm').reset();
             setDefaultTanggal();
             alert('Tiket kerusakan berhasil dikirim ke Tim Teknisi!');
+            
+            // Auto Link Tab & sinkronisasi data langsung terbuka pasca submit form
+            await muatDataDariFirebase();
             switchPanel('tabel');
-            btnSubmit.disabled = false; btnSubmit.innerText = '🚀 Kirim Tiket Laporan ke Teknisi';
+            
+            btnSubmit.disabled = false; 
+            btnSubmit.innerText = '🚀 Kirim Tiket Laporan ke Teknisi';
         }
 
         function bukaModalVideo(id) {
-            const srcData = document.getElementById(`vidContainer_${id}`).innerText;
+            const container = document.getElementById(`vidContainer_${id}`);
+            if(!container) return;
+            const srcData = container.innerText;
             const win = window.open();
             win.document.write(`<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;"><video src="${srcData}" controls autoplay style="max-width:100%;max-height:100vh;"></video></body>`);
         }
 
-        async function ubahStatus(firebaseKey, stat) {
-            await fetch(`${FIREBASE_BASE_URL}/requests/${firebaseKey}/status.json`, { method: 'PUT', body: JSON.stringify(stat) });
-            muatDataDariFirebase().then(() => renderTabel());
+        async function ubahStatus(keyId, stat) {
+            // Update Array Lokal Terlebih dahulu agar responsif
+            const lokalIndex = daftarPermintaan.findIndex(item => (item.firebaseKey === keyId || item.id == keyId));
+            if(lokalIndex !== -1) daftarPermintaan[lokalIndex].status = stat;
+            
+            try {
+                await fetch(`${FIREBASE_BASE_URL}/requests/${keyId}/status.json`, { method: 'PUT', body: JSON.stringify(stat) });
+            } catch(e) {
+                localStorage.setItem('local_backup_requests', JSON.stringify(daftarPermintaan));
+            }
+            renderTabel();
         }
 
-        async function pindahkanKeTrash(firebaseKey) {
+        async function pindahkanKeTrash(keyId) {
             if(confirm('Pindahkan tiket maintenance ini ke Recycle Bin?')) {
-                const targetData = daftarPermintaan.find(item => item.firebaseKey === firebaseKey);
+                const targetData = daftarPermintaan.find(item => (item.firebaseKey === keyId || item.id == keyId));
                 if(targetData) {
                     const cleanData = {...targetData};
                     delete cleanData.firebaseKey; 
                     
-                    await fetch(`${FIREBASE_BASE_URL}/trash.json`, { method: 'POST', body: JSON.stringify(cleanData) });
-                    await fetch(`${FIREBASE_BASE_URL}/requests/${firebaseKey}.json`, { method: 'DELETE' });
-                    muatDataDariFirebase().then(() => renderTabel());
+                    try {
+                        await fetch(`${FIREBASE_BASE_URL}/trash.json`, { method: 'POST', body: JSON.stringify(cleanData) });
+                        await fetch(`${FIREBASE_BASE_URL}/requests/${keyId}.json`, { method: 'DELETE' });
+                    } catch(e) {
+                        daftarTrash.push(cleanData);
+                        daftarPermintaan = daftarPermintaan.filter(item => (item.firebaseKey !== keyId && item.id != keyId));
+                        localStorage.setItem('local_backup_requests', JSON.stringify(daftarPermintaan));
+                    }
+                    await muatDataDariFirebase(); 
+                    renderTabel();
                 }
             }
         }
@@ -766,7 +789,7 @@
                     <td class="px-4 py-2 border-b">${u.password}</td>
                     <td class="px-4 py-2 border-b"><span class="px-2 py-0.5 rounded font-bold bg-slate-100 border text-[10px]">${u.role.toUpperCase()}</span></td>
                     <td class="px-4 py-2 border-b text-slate-500">${u.role === 'staff' ? 'Outlet: ' + u.lockBranch : 'Akses Global Teknisi'}</td>
-                    <td class="px-4 py-2 text-center border-b"><button onclick="deleteMasterItem('user', '${u.firebaseKey}')" ${disabledHapus}>Hapus</button></td>
+                    <td class="px-4 py-2 text-center border-b"><button onclick="deleteMasterItem('user', '${u.firebaseKey || u.username}')" ${disabledHapus}>Hapus</button></td>
                 </tr>`;
             });
         }
@@ -783,6 +806,7 @@
             document.getElementById('trashKosong').classList.add('hidden');
 
             daftarTrash.forEach(item => {
+                let keyTrash = item.firebaseKey || item.id;
                 tTrash.innerHTML += `<tr>
                     <td class="px-4 py-2 border-b text-slate-500">${item.tanggal}</td>
                     <td class="px-4 py-2 border-b font-bold text-slate-700">${item.branch}</td>
@@ -790,8 +814,8 @@
                     <td class="px-4 py-2 border-b"><div><span class="bg-slate-100 px-1 rounded text-[10px] font-bold">${item.kategori}</span></div><div class="text-slate-400 text-[10px] truncate max-w-[15px]">${item.keterangan}</div></td>
                     <td class="px-4 py-2 border-b text-center">
                         <div class="flex gap-1.5 justify-center">
-                            <button onclick="restoreTiket('${item.firebaseKey}')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded text-[11px] font-medium">🔄 Restore</button>
-                            <button onclick="hapusPermanenTiket('${item.firebaseKey}')" class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-1 rounded text-[11px] font-medium">❌ Hapus Permanen</button>
+                            <button onclick="restoreTiket('${keyTrash}')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded text-[11px] font-medium">🔄 Restore</button>
+                            <button onclick="hapusPermanenTiket('${keyTrash}')" class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-1 rounded text-[11px] font-medium">❌ Hapus Permanen</button>
                         </div>
                     </td>
                 </tr>`;
@@ -800,40 +824,38 @@
 
         async function editMasterItem(type, index, newValue) {
             if(!newValue.trim()) return;
-            if(type === 'branch') { 
-                masterBranches[index] = newValue.trim(); 
-                buildSelectOptions(); 
-                await updateFirebaseNode('branches', masterBranches); 
-            }
-            else if(type === 'divisi') { 
-                masterDivisi[index] = newValue.trim(); 
-                buildSelectOptions(); 
-                await updateFirebaseNode('divisi', masterDivisi); 
-            }
-            else if(type === 'kategori') { 
-                masterKategori[index] = newValue.trim(); 
-                buildSelectOptions(); 
-                await updateFirebaseNode('kategori', masterKategori); 
-            }
+            if(type === 'branch') { masterBranches[index] = newValue.trim(); await updateFirebaseNode('branches', masterBranches); }
+            else if(type === 'divisi') { masterDivisi[index] = newValue.trim(); await updateFirebaseNode('divisi', masterDivisi); }
+            else if(type === 'kategori') { masterKategori[index] = newValue.trim(); await updateFirebaseNode('kategori', masterKategori); }
+            buildSelectOptions();
             await muatDataDariFirebase();
         }
 
-        async function restoreTiket(firebaseKey) {
-            const targetData = daftarTrash.find(item => item.firebaseKey === firebaseKey);
+        async function restoreTiket(keyId) {
+            const targetData = daftarTrash.find(item => (item.firebaseKey === keyId || item.id == keyId));
             if(targetData) {
                 const cleanData = {...targetData};
                 delete cleanData.firebaseKey;
                 
-                await fetch(`${FIREBASE_BASE_URL}/requests.json`, { method: 'POST', body: JSON.stringify(cleanData) });
-                await fetch(`${FIREBASE_BASE_URL}/trash/${firebaseKey}.json`, { method: 'DELETE' });
+                try {
+                    await fetch(`${FIREBASE_BASE_URL}/requests.json`, { method: 'POST', body: JSON.stringify(cleanData) });
+                    await fetch(`${FIREBASE_BASE_URL}/trash/${keyId}.json`, { method: 'DELETE' });
+                } catch(e) {
+                    daftarPermintaan.push(cleanData);
+                    daftarTrash = daftarTrash.filter(item => (item.firebaseKey !== keyId && item.id != keyId));
+                }
                 alert('Tiket berhasil dipulihkan kembali ke monitoring!');
                 await muatDataDariFirebase(); renderPanelSettingMaster();
             }
         }
 
-        async function hapusPermanenTiket(firebaseKey) {
+        async function hapusPermanenTiket(keyId) {
             if(confirm('Hapus tiket ini secara permanen dari database? Tindakan ini tidak bisa dibatalkan.')) {
-                await fetch(`${FIREBASE_BASE_URL}/trash/${firebaseKey}.json`, { method: 'DELETE' });
+                try {
+                    await fetch(`${FIREBASE_BASE_URL}/trash/${keyId}.json`, { method: 'DELETE' });
+                } catch(e) {
+                    daftarTrash = daftarTrash.filter(item => (item.firebaseKey !== keyId && item.id != keyId));
+                }
                 await muatDataDariFirebase(); renderPanelSettingMaster();
             }
         }
@@ -844,59 +866,41 @@
                 const inp = document.getElementById('addBranchInput'); 
                 if(inp && inp.value.trim()) {
                     masterBranches.push(inp.value.trim());
-                    inp.value = ''; 
-                    buildSelectOptions(); 
-                    renderPanelSettingMaster(); 
-                    await updateFirebaseNode('branches', masterBranches);
+                    inp.value = ''; await updateFirebaseNode('branches', masterBranches);
                 }
             } else if(type === 'divisi') {
                 const inp = document.getElementById('addDivisiInput'); 
                 if(inp && inp.value.trim()) {
                     masterDivisi.push(inp.value.trim());
-                    inp.value = ''; 
-                    buildSelectOptions(); 
-                    renderPanelSettingMaster(); 
-                    await updateFirebaseNode('divisi', masterDivisi);
+                    inp.value = ''; await updateFirebaseNode('divisi', masterDivisi);
                 }
             } else if(type === 'kategori') {
                 const inp = document.getElementById('addKategoriInput'); 
                 if(inp && inp.value.trim()) {
                     masterKategori.push(inp.value.trim());
-                    inp.value = ''; 
-                    buildSelectOptions(); 
-                    renderPanelSettingMaster(); 
-                    await updateFirebaseNode('kategori', masterKategori);
+                    inp.value = ''; await updateFirebaseNode('kategori', masterKategori);
                 }
             }
+            buildSelectOptions();
+            renderPanelSettingMaster();
             await muatDataDariFirebase();
         }
 
         async function deleteMasterItem(type, keyOrIndex) {
             if(!confirm('Hapus komponen ini?')) return;
-            if(type === 'branch') { 
-                masterBranches.splice(keyOrIndex, 1); 
-                buildSelectOptions(); 
-                renderPanelSettingMaster(); 
-                await updateFirebaseNode('branches', masterBranches); 
-            }
-            else if(type === 'divisi') { 
-                masterDivisi.splice(keyOrIndex, 1); 
-                buildSelectOptions(); 
-                renderPanelSettingMaster(); 
-                await updateFirebaseNode('divisi', masterDivisi); 
-            }
-            else if(type === 'kategori') { 
-                masterKategori.splice(keyOrIndex, 1); 
-                buildSelectOptions(); 
-                renderPanelSettingMaster(); 
-                await updateFirebaseNode('kategori', masterKategori); 
-            }
+            if(type === 'branch') { masterBranches.splice(keyOrIndex, 1); await updateFirebaseNode('branches', masterBranches); }
+            else if(type === 'divisi') { masterDivisi.splice(keyOrIndex, 1); await updateFirebaseNode('divisi', masterDivisi); }
+            else if(type === 'kategori') { masterKategori.splice(keyOrIndex, 1); await updateFirebaseNode('kategori', masterKategori); }
             else if(type === 'user') { 
-                await fetch(`${FIREBASE_BASE_URL}/users/${keyOrIndex}.json`, { method: 'DELETE' }); 
-                await muatDataDariFirebase(); 
-                renderPanelSettingMaster();
-                return;
+                try {
+                    await fetch(`${FIREBASE_BASE_URL}/users/${keyOrIndex}.json`, { method: 'DELETE' }); 
+                } catch(e) {
+                    masterUsers = masterUsers.filter(u => u.username !== keyOrIndex);
+                }
+                await muatDataDariFirebase(); renderPanelSettingMaster(); return;
             }
+            buildSelectOptions();
+            renderPanelSettingMaster();
             await muatDataDariFirebase();
         }
 
@@ -912,9 +916,17 @@
             const r = document.getElementById('newRole').value;
             let l = r === 'staff' ? document.getElementById('newLockBranch').value : "ALL";
             
-            await fetch(`${FIREBASE_BASE_URL}/users.json`, { method: 'POST', body: JSON.stringify({ username: u, password: p, role: r, lockBranch: l }) });
-            document.getElementById('newUsername').value = ''; document.getElementById('newPassword').value = '';
-            await muatDataDariFirebase(); renderPanelSettingMaster(); alert('User tersimpan!');
+            const payload = { username: u, password: p, role: r, lockBranch: l };
+            try {
+                await fetch(`${FIREBASE_BASE_URL}/users.json`, { method: 'POST', body: JSON.stringify(payload) });
+            } catch(e) {
+                masterUsers.push(payload);
+            }
+            document.getElementById('newUsername').value = ''; 
+            document.getElementById('newPassword').value = '';
+            await muatDataDariFirebase(); 
+            renderPanelSettingMaster(); 
+            alert('User tersimpan!');
         }
 
         async function gantiLogoSistem(event) {

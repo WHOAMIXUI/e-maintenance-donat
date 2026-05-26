@@ -338,7 +338,7 @@
         let daftarPermintaan = [];
         let daftarTrash = [];
         let appLogo = '';
-        let targetWhatsAppNumber = '6282343487908'; // Locked Target Number
+        let targetWhatsAppNumber = '6282343487908'; 
         let currentUserObj = null;
         let pieChartInstance = null;
 
@@ -352,7 +352,8 @@
                 if (!res.ok) throw new Error("Firebase error");
                 const db = await res.json();
                 
-                if (db) {
+                // Mengakomodasi jika database sukses terhubung tapi isinya masih kosong
+                if (db !== null) {
                     if (db.branches) masterBranches = Object.values(db.branches).filter(Boolean);
                     if (db.divisi) masterDivisi = Object.values(db.divisi).filter(Boolean);
                     if (db.kategori) masterKategori = Object.values(db.kategori).filter(Boolean);
@@ -610,7 +611,6 @@
 
         function renderTabel() {
             const tabel = document.getElementById('tabelData');
-            const thAdmin = document.getElementById('thAdministrasi');
             if (!tabel) return;
             tabel.innerHTML = '';
             
@@ -747,7 +747,7 @@
                     break;
             }
             
-            selectElement.value = ""; // Reset dropdown kembali ke default
+            selectElement.value = ""; 
         }
 
         function convertFileToBase64(file) {
@@ -851,21 +851,33 @@
 
         async function pindahkanKeTrash(keyId) {
             if(confirm('Pindahkan tiket maintenance ini ke Recycle Bin?')) {
-                const targetData = daftarPermintaan.find(item => (item.firebaseKey === keyId || item.id == keyId));
+                // Gunakan perbandingan longgar (==) agar fleksibel mencari key string / id number
+                const targetData = daftarPermintaan.find(item => (item.firebaseKey == keyId || item.id == keyId));
+                
                 if(targetData) {
                     const cleanData = {...targetData};
+                    const aktualKey = targetData.firebaseKey || keyId;
                     delete cleanData.firebaseKey; 
                     
                     try {
+                        // 1. Simpan ke Trash
                         await fetch(`${FIREBASE_BASE_URL}/trash.json`, { method: 'POST', body: JSON.stringify(cleanData) });
-                        await fetch(`${FIREBASE_BASE_URL}/requests/${keyId}.json`, { method: 'DELETE' });
+                        // 2. Hapus dari Node Requests Utama
+                        await fetch(`${FIREBASE_BASE_URL}/requests/${aktualKey}.json`, { method: 'DELETE' });
+                        
+                        alert('Tiket berhasil dipindahkan ke Recycle Bin!');
                     } catch(e) {
+                        console.warn("Mode Offline: Menyimpan data hapus ke lokal memory");
                         daftarTrash.push(cleanData);
-                        daftarPermintaan = daftarPermintaan.filter(item => (item.firebaseKey !== keyId && item.id != keyId));
+                        daftarPermintaan = daftarPermintaan.filter(item => (item.firebaseKey != aktualKey && item.id != aktualKey));
                         localStorage.setItem('local_backup_requests', JSON.stringify(daftarPermintaan));
                     }
+                    
+                    // 3. Ambil data terbaru dan segarkan UI layar
                     await muatDataDariFirebase(); 
                     renderTabel();
+                } else {
+                    alert('Gagal: Data tiket tidak ditemukan.');
                 }
             }
         }
